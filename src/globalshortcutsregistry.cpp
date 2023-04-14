@@ -57,7 +57,7 @@ static KGlobalAccelInterface *loadPlugin(GlobalShortcutsRegistry *parent)
         }
     }
 
-    const QVector<KPluginMetaData> candidates = KPluginMetaData::findPlugins(QStringLiteral("org.kde.kglobalaccel5.platforms"));
+    const QVector<KPluginMetaData> candidates = KPluginMetaData::findPlugins(QStringLiteral("org.kde.kglobalacceld.platforms"));
     for (const KPluginMetaData &candidate : candidates) {
         QPluginLoader loader(candidate.fileName());
         if (checkPlatform(loader.metaData(), platformName)) {

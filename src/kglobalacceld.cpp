@@ -237,7 +237,7 @@ QList<QStringList> KGlobalAccelD::allActionsForComponent(const QStringList &acti
     return ret;
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 QStringList KGlobalAccelD::action(int key) const
 {
     return actionList(key);
@@ -280,7 +280,7 @@ void KGlobalAccelD::blockGlobalShortcuts(bool block)
     }
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 QList<int> KGlobalAccelD::shortcut(const QStringList &action) const
 {
     GlobalShortcut *shortcut = d->findAction(action);
@@ -304,7 +304,7 @@ QList<QKeySequence> KGlobalAccelD::shortcutKeys(const QStringList &action) const
     return QList<QKeySequence>();
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 QList<int> KGlobalAccelD::defaultShortcut(const QStringList &action) const
 {
     GlobalShortcut *shortcut = d->findAction(action);
@@ -371,7 +371,7 @@ QDBusObjectPath KGlobalAccelD::getComponent(const QString &componentUnique) cons
     }
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 QList<KGlobalShortcutInfo> KGlobalAccelD::getGlobalShortcutsByKey(int key) const
 {
     return globalShortcutsByKey(key, KGlobalAccel::MatchType::Equal);
@@ -393,7 +393,7 @@ QList<KGlobalShortcutInfo> KGlobalAccelD::globalShortcutsByKey(const QKeySequenc
     return rc;
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 bool KGlobalAccelD::isGlobalShortcutAvailable(int shortcut, const QString &component) const
 {
     return globalShortcutAvailable(shortcut, component);
@@ -432,7 +432,7 @@ bool KGlobalAccelD::unregister(const QString &componentUnique, const QString &sh
     return shortcut;
 }
 
-#if KGLOBALACCELPRIVATE_BUILD_DEPRECATED_SINCE(4, 3)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(4, 3)
 void KGlobalAccelD::unRegister(const QStringList &actionId)
 {
     qCDebug(KGLOBALACCELD) << actionId;
@@ -446,7 +446,7 @@ void KGlobalAccelD::unRegister(const QStringList &actionId)
 }
 #endif
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 QList<int> KGlobalAccelD::setShortcut(const QStringList &actionId, const QList<int> &keys, uint flags)
 {
     QList<QKeySequence> input;
@@ -514,7 +514,7 @@ QList<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, 
     return shortcut->keys();
 }
 
-#if KGLOBALACCEL_BUILD_DEPRECATED_SINCE(5, 90)
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
 void KGlobalAccelD::setForeignShortcut(const QStringList &actionId, const QList<int> &keys)
 {
     QList<QKeySequence> input;

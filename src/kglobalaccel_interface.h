@@ -11,7 +11,7 @@
 
 #include <QObject>
 
-#include "kf6globalaccelprivate_export.h"
+#include "kglobalacceld_export.h"
 
 class GlobalShortcutsRegistry;
 
@@ -20,7 +20,7 @@ class GlobalShortcutsRegistry;
 /**
  * Abstract interface for plugins to implement
  */
-class KGLOBALACCELPRIVATE_EXPORT KGlobalAccelInterface : public QObject
+class KGLOBALACCELD_EXPORT KGlobalAccelInterface : public QObject
 {
     Q_OBJECT
 
@@ -69,7 +69,7 @@ protected:
     QScopedPointer<Private> d;
 };
 
-class KGLOBALACCELPRIVATE_EXPORT KGlobalAccelInterfaceV2 : public KGlobalAccelInterface
+class KGLOBALACCELD_EXPORT KGlobalAccelInterfaceV2 : public KGlobalAccelInterface
 {
     Q_OBJECT
 public:

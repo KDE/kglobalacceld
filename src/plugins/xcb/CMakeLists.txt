@@ -4,9 +4,9 @@ set(xcb_plugin_SRCS
     ../../logging.cpp
 )
 
-add_library(KF6GlobalAccelPrivateXcb MODULE ${xcb_plugin_SRCS})
-target_link_libraries(KF6GlobalAccelPrivateXcb
-    KF6GlobalAccelPrivate
+add_library(KGlobalAccelDXcb MODULE ${xcb_plugin_SRCS})
+target_link_libraries(KGlobalAccelDXcb
+    KGlobalAccelD
     XCB::XCB
     XCB::KEYSYMS
     XCB::XKB
@@ -15,7 +15,7 @@ target_link_libraries(KF6GlobalAccelPrivateXcb
 
 install(
     TARGETS
-        KF6GlobalAccelPrivateXcb
+        KGlobalAccelDXcb
     DESTINATION
-        ${KDE_INSTALL_PLUGINDIR}/org.kde.kglobalaccel5.platforms/
+        ${KDE_INSTALL_PLUGINDIR}/org.kde.kglobalacceld.platforms/
 )

@@ -1,6 +1,3 @@
-###############################################################################
-### KDED Global Accel Daemon
-
 set(kglobalaccelprivate_SRCS
     kglobalacceld.cpp
     kglobalaccel_interface.cpp
@@ -10,20 +7,18 @@ set(kglobalaccelprivate_SRCS
     globalshortcut.cpp
     globalshortcutsregistry.cpp
     globalshortcutcontext.cpp
-    ../sequencehelpers_p.cpp
+    sequencehelpers_p.cpp
 )
-ecm_create_qm_loader(kglobalaccelprivate_SRCS kglobalaccel6_qt)
 
 configure_file(config-kglobalaccel.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-kglobalaccel.h )
 
-add_library(KF6GlobalAccelPrivate ${kglobalaccelprivate_SRCS})
-add_library(KF6::GlobalAccelPrivate ALIAS KF6GlobalAccelPrivate)
+add_library(KGlobalAccelD ${kglobalaccelprivate_SRCS})
+add_library(K::KGlobalAccelD ALIAS KGlobalAccelD)
 
-ecm_generate_export_header(KF6GlobalAccelPrivate
-    EXPORT_FILE_NAME kf6globalaccelprivate_export.h
-    BASE_NAME KGlobalAccelPrivate
-    GROUP_BASE_NAME KF
-    VERSION ${KF_VERSION}
+ecm_generate_export_header(KGlobalAccelD
+    EXPORT_FILE_NAME kglobalacceld_export.h
+    BASE_NAME KGlobalAccelD
+    VERSION ${PROJECT_VERSION}
     USE_VERSION_HEADER
     VERSION_BASE_NAME KGlobalAccel
     DEPRECATED_BASE_VERSION 0
@@ -31,9 +26,9 @@ ecm_generate_export_header(KF6GlobalAccelPrivate
     EXCLUDE_DEPRECATED_BEFORE_AND_AT ${EXCLUDE_DEPRECATED_BEFORE_AND_AT}
 )
 
-target_include_directories(KF6GlobalAccelPrivate INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR_KF}/KGlobalAccel>")
+target_include_directories(KGlobalAccelD INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD>")
 
-target_link_libraries(KF6GlobalAccelPrivate
+target_link_libraries(KGlobalAccelD
     PUBLIC
         Qt6::DBus
         KF6::GlobalAccel
@@ -42,53 +37,38 @@ target_link_libraries(KF6GlobalAccelPrivate
         KF6::ConfigCore
 )
 
-set_target_properties(KF6GlobalAccelPrivate PROPERTIES VERSION ${KGLOBALACCEL_VERSION}
-                                                SOVERSION ${KGLOBALACCEL_SOVERSION}
-                                                EXPORT_NAME "GlobalAccelPrivate"
+set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
+                                                SOVERSION ${KGLOBALACCELD_SOVERSION}
+                                                EXPORT_NAME "KGlobalAccelD"
 )
 
 if(XCB_XCB_FOUND)
-    target_link_libraries(KF6GlobalAccelPrivate PUBLIC Qt6::GuiPrivate) # qtx11extras_p.h
+    target_link_libraries(KGlobalAccelD PUBLIC Qt6::GuiPrivate) # qtx11extras_p.h
 endif()
 
-add_executable(kglobalaccel5 main.cpp logging.cpp)
-ecm_mark_nongui_executable(kglobalaccel5)
+add_executable(kglobalacceld main.cpp logging.cpp)
 
-target_include_directories(kglobalaccel5 PRIVATE ${CMAKE_BINARY_DIR})
+target_include_directories(kglobalacceld PRIVATE ${CMAKE_BINARY_DIR})
 
-target_link_libraries(kglobalaccel5
-    KF6GlobalAccelPrivate
+target_link_libraries(kglobalacceld
+    KGlobalAccelD
     KF6::DBusAddons   # KDBusService
     KF6::Crash
     )
 
 add_subdirectory(plugins)
 
-# Install application and configuration
-install(TARGETS KF6GlobalAccelPrivate EXPORT KF6GlobalAccelTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
-install( TARGETS kglobalaccel5 ${KF_INSTALL_TARGETS_DEFAULT_ARGS} )
-
-if(NOT EXCLUDE_DEPRECATED_BEFORE_AND_AT STREQUAL "CURRENT" AND EXCLUDE_DEPRECATED_BEFORE_AND_AT VERSION_LESS 5.102.0)
-    install( FILES kglobalaccel.desktop  DESTINATION ${KDE_INSTALL_KSERVICESDIR} RENAME kglobalaccel5.desktop)
-endif()
+install(TARGETS KGlobalAccelD EXPORT KGlobalAccelDTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
+install( TARGETS kglobalacceld ${KF_INSTALL_TARGETS_DEFAULT_ARGS} )
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/kf6globalaccelprivate_export.h
+  ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
   kglobalacceld.h
   kglobalaccel_interface.h
-  DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF}/KGlobalAccel/private COMPONENT Devel
+  DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
 
-# D-Bus activation service file, and associated systemd service
-include (ECMGenerateDBusServiceFile)
 include (ECMConfiguredInstall)
-ecm_generate_dbus_service_file(
-   NAME org.kde.kglobalaccel
-   EXECUTABLE "${KDE_INSTALL_FULL_BINDIR}/kglobalaccel5"
-   SYSTEMD_SERVICE plasma-kglobalaccel.service
-   DESTINATION ${KDE_INSTALL_DBUSSERVICEDIR}
-)
-
 ecm_install_configured_files(
    INPUT plasma-kglobalaccel.service.in
    DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR}
