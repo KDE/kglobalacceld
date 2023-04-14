@@ -52,7 +52,7 @@ static void calculateGrabMasks()
 //----------------------------------------------------
 
 KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
-    : KGlobalAccelInterfaceV2(parent)
+    : KGlobalAccelInterface(parent)
     , m_keySymbols(nullptr)
     , m_xkb_first_event(0)
 {

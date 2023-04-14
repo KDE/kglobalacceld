@@ -22,7 +22,7 @@ typedef struct _XCBKeySymbols xcb_key_symbols_t;
  * The KGlobalAccel private class handles grabbing of global keys,
  * and notification of when these keys are pressed.
  */
-class KGlobalAccelImpl : public KGlobalAccelInterfaceV2, public QAbstractNativeEventFilter
+class KGlobalAccelImpl : public KGlobalAccelInterface, public QAbstractNativeEventFilter
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.kde.kglobalaccel5.KGlobalAccelInterface" FILE "xcb.json")

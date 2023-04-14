@@ -140,7 +140,6 @@ private:
     friend class KGlobalAccelDPrivate;
     friend class Component;
     friend class KGlobalAccelInterface;
-    friend class KGlobalAccelInterfaceV2;
 
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
     KServiceActionComponent *createServiceActionComponent(const QString &uniqueName, const QString &friendlyName);
