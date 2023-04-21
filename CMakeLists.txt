@@ -8,6 +8,9 @@ set(PROJECT_VERSION_MAJOR 5)
 set(QT_MIN_VERSION "6.4.0")
 set(KF_DEP_VERSION "5.240.0")
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 include(FeatureSummary)
 find_package(ECM ${KF_DEP_VERSION}  NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://commits.kde.org/extra-cmake-modules")
