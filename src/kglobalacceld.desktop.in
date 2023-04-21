@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Global Shortcuts
+Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/kglobalacceld
+NoDisplay=true
+OnlyShowIn=KDE;
+X-systemd-skip=true

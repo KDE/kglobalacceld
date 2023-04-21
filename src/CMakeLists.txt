@@ -73,3 +73,8 @@ ecm_install_configured_files(
    INPUT plasma-kglobalaccel.service.in
    DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR}
 )
+
+ecm_install_configured_files(
+    INPUT kglobalacceld.desktop.in
+    DESTINATION ${KDE_INSTALL_AUTOSTARTDIR} @ONLY
+)
