@@ -29,6 +29,12 @@ static bool isEnabled()
 
 extern "C" Q_DECL_EXPORT int main(int argc, char **argv)
 {
+    // On Wayland the shortcuts are ran as part of kwin_wayland
+    // no-op when started on Wayland
+    if (qEnvironmentVariable("XDG_SESSION_TYPE") == QLatin1String("wayland")) {
+        return 0;
+    }
+
     // Disable Session Management the right way (C)
     //
     // ksmserver has global shortcuts. disableSessionManagement() does not prevent Qt from
