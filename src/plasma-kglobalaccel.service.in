@@ -3,7 +3,7 @@ Description=KDE Global Shortcuts Server
 PartOf=graphical-session.target
 
 [Service]
-ExecStart=@KDE_INSTALL_FULL_BINDIR@/kglobalacceld
+ExecStart=@KDE_INSTALL_FULL_LIBEXECDIR@/kglobalacceld
 BusName=org.kde.kglobalaccel
 Slice=background.slice
 TimeoutSec=5sec
