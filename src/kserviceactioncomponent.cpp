@@ -93,19 +93,6 @@ void KServiceActionComponent::runProcess(const KConfigGroup &group, const QStrin
         return;
     }
 
-    QDBusConnectionInterface *dbusDaemon = QDBusConnection::sessionBus().interface();
-    const bool klauncherAvailable = dbusDaemon->isServiceRegistered(QStringLiteral("org.kde.klauncher5"));
-    if (klauncherAvailable) {
-        QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.kde.klauncher5"),
-                                                          QStringLiteral("/KLauncher"),
-                                                          QStringLiteral("org.kde.KLauncher"),
-                                                          QStringLiteral("exec_blind"));
-        msg << command << args;
-
-        QDBusConnection::sessionBus().asyncCall(msg);
-        return;
-    }
-
     const QString cmdExec = QStandardPaths::findExecutable(command);
     if (cmdExec.isEmpty()) {
         qCWarning(KGLOBALACCELD) << "Could not find executable in PATH" << command;
