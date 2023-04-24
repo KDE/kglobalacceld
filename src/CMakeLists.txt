@@ -30,11 +30,15 @@ target_include_directories(KGlobalAccelD INTERFACE "$<INSTALL_INTERFACE:${KDE_IN
 
 target_link_libraries(KGlobalAccelD
     PUBLIC
-        Qt6::DBus
         KF6::GlobalAccel
+    PRIVATE
+        Qt6::DBus
         KF6::WindowSystem # KKeyServer
         KF6::CoreAddons   # KAboutData
         KF6::ConfigCore
+        KF6::Service
+        KF6::KIOGui
+        KF6::Notifications
 )
 
 set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
@@ -52,6 +56,7 @@ target_include_directories(kglobalacceld PRIVATE ${CMAKE_BINARY_DIR})
 
 target_link_libraries(kglobalacceld
     KGlobalAccelD
+    KF6::CoreAddons
     KF6::DBusAddons   # KDBusService
     KF6::Crash
     )

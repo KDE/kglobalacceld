@@ -45,6 +45,9 @@ find_package(KF6Crash ${KF_DEP_VERSION} REQUIRED)
 find_package(KF6DBusAddons ${KF_DEP_VERSION} REQUIRED)
 find_package(KF6WindowSystem ${KF_DEP_VERSION} REQUIRED)
 find_package(KF6GlobalAccel ${KF_DEP_VERSION} REQUIRED)
+find_package(KF6Service ${KF_DEP_VERSION} REQUIRED)
+find_package(KF6KIO ${KF_DEP_VERSION} REQUIRED)
+find_package(KF6Notifications ${KF_DEP_VERSION} REQUIRED)
 
 find_package(XCB MODULE COMPONENTS XCB KEYSYMS XKB RECORD OPTIONAL_COMPONENTS XTEST)
 set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding"

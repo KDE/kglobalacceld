@@ -7,6 +7,7 @@ set(xcb_plugin_SRCS
 add_library(KGlobalAccelDXcb MODULE ${xcb_plugin_SRCS})
 target_link_libraries(KGlobalAccelDXcb
     KGlobalAccelD
+    KF6::WindowSystem
     XCB::XCB
     XCB::KEYSYMS
     XCB::XKB

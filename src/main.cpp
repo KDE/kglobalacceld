@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     qunsetenv("SESSION_MANAGER");
 
     QGuiApplication::setDesktopSettingsAware(false);
+    QGuiApplication::setQuitLockEnabled(false);
     QGuiApplication app(argc, argv);
     KAboutData aboutdata(QStringLiteral("kglobalaccel"),
                          QObject::tr("KDE Global Shortcuts Service"),

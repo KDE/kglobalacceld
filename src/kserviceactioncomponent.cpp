@@ -13,6 +13,10 @@
 #include <QFileInfo>
 #include <QProcess>
 
+#include <KIO/ApplicationLauncherJob>
+#include <KIO/UntrustedProgramHandlerInterface>
+#include <KNotificationJobUiDelegate>
+#include <KService>
 #include <KShell>
 #include <KWindowSystem>
 
@@ -21,6 +25,20 @@
 #include <KStartupInfo>
 #include <private/qtx11extras_p.h>
 #endif
+
+class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
+{
+public:
+    UntrustedProgramHandler(QObject *parent)
+        : KIO::UntrustedProgramHandlerInterface(parent)
+    {
+    }
+
+    void showUntrustedProgramWarning(KJob * /*job*/, const QString & /*programName*/) override
+    {
+        Q_EMIT result(true);
+    }
+};
 
 KServiceActionComponent::KServiceActionComponent(const QString &serviceStorageId, const QString &friendlyName)
     : Component(serviceStorageId, friendlyName)
@@ -50,120 +68,37 @@ KServiceActionComponent::KServiceActionComponent(const QString &serviceStorageId
 
 KServiceActionComponent::~KServiceActionComponent() = default;
 
-void KServiceActionComponent::runProcess(const KConfigGroup &group, const QString &token)
-{
-    QStringList args = KShell::splitArgs(group.readEntry(QStringLiteral("Exec"), QString()));
-    if (args.isEmpty()) {
-        return;
-    }
-    // sometimes entries have an %u for command line parameters
-    if (args.last().contains(QLatin1Char('%'))) {
-        args.pop_back();
-    }
-
-    const QString command = args.takeFirst();
-
-    auto startDetachedWithToken = [token](const QString &program, const QStringList &args) {
-        QProcess p;
-        p.setProgram(program);
-        p.setArguments(args);
-        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        if (!token.isEmpty()) {
-            if (KWindowSystem::isPlatformWayland()) {
-                env.insert(QStringLiteral("XDG_ACTIVATION_TOKEN"), token);
-            } else {
-                env.insert(QStringLiteral("DESKTOP_STARTUP_ID"), token);
-            }
-        }
-        p.setProcessEnvironment(env);
-        if (!p.startDetached()) {
-            qCWarning(KGLOBALACCELD) << "Failed to start" << program;
-        }
-    };
-
-    const auto kstart = QStandardPaths::findExecutable(QStringLiteral("kstart5"));
-    if (!kstart.isEmpty()) {
-        if (group.name() == QLatin1String("Desktop Entry") && m_isInApplicationsDir) {
-            startDetachedWithToken(kstart, {QStringLiteral("--application"), QFileInfo(m_desktopFile->fileName()).completeBaseName()});
-        } else {
-            args.prepend(command);
-            args.prepend(QStringLiteral("--"));
-            startDetachedWithToken(kstart, args);
-        }
-        return;
-    }
-
-    const QString cmdExec = QStandardPaths::findExecutable(command);
-    if (cmdExec.isEmpty()) {
-        qCWarning(KGLOBALACCELD) << "Could not find executable in PATH" << command;
-        return;
-    }
-    startDetachedWithToken(cmdExec, args);
-}
-
 void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &shortcut)
 {
-    // TODO KF6 use ApplicationLauncherJob to start processes when it's available in a framework that we depend on
+    KIO::ApplicationLauncherJob *job = nullptr;
 
-    auto launchWithToken = [this, shortcut](const QString &token) {
-        // DBusActivatatable spec as per https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html#dbus
-        if (m_desktopFile->desktopGroup().readEntry("DBusActivatable", false)) {
-            QString method;
-            const QString serviceName = m_serviceStorageId.chopped(strlen(".desktop"));
-            const QString objectPath = QStringLiteral("/%1").arg(serviceName).replace(QLatin1Char('.'), QLatin1Char('/'));
-            const QString interface = QStringLiteral("org.freedesktop.Application");
-            QDBusMessage message;
-            if (shortcut.uniqueName() == QLatin1String("_launch")) {
-                message = QDBusMessage::createMethodCall(serviceName, objectPath, interface, QStringLiteral("Activate"));
-            } else {
-                message = QDBusMessage::createMethodCall(serviceName, objectPath, interface, QStringLiteral("ActivateAction"));
-                message << shortcut.uniqueName() << QVariantList();
-            }
-            if (!token.isEmpty()) {
-                if (KWindowSystem::isPlatformWayland()) {
-                    message << QVariantMap{{QStringLiteral("activation-token"), token}};
-                } else {
-                    message << QVariantMap{{QStringLiteral("desktop-startup-id"), token}};
-                }
-            } else {
-                message << QVariantMap();
-            }
-
-            QDBusConnection::sessionBus().asyncCall(message);
-            return;
-        }
-
-        // we can't use KRun there as it depends from KIO and would create a circular dep
-        if (shortcut.uniqueName() == QLatin1String("_launch")) {
-            runProcess(m_desktopFile->desktopGroup(), token);
-            return;
-        }
-        const auto lstActions = m_desktopFile->readActions();
-        for (const QString &action : lstActions) {
-            if (action == shortcut.uniqueName()) {
-                runProcess(m_desktopFile->actionGroup(action), token);
-                return;
-            }
-        }
-    };
-    if (KWindowSystem::isPlatformWayland()) {
-        const QString serviceName = m_serviceStorageId.chopped(strlen(".desktop"));
-        KWindowSystem::requestXdgActivationToken(nullptr, 0, serviceName);
-        connect(
-            KWindowSystem::self(),
-            &KWindowSystem::xdgActivationTokenArrived,
-            this,
-            [launchWithToken](int tokenSerial, const QString &token) {
-                if (tokenSerial == 0) {
-                    launchWithToken(token);
-                }
-            },
-            Qt::SingleShotConnection);
+    if (shortcut.uniqueName() == QLatin1String("_launch")) {
+        KService::Ptr service = KService::serviceByStorageId(m_desktopFile->fileName());
+        job = new KIO::ApplicationLauncherJob(service);
     } else {
-#if HAVE_X11
-        launchWithToken(QString::fromUtf8(KStartupInfo::createNewStartupIdForTimestamp(QX11Info::appTime())));
-#endif
+        KService::Ptr service = KService::serviceByStorageId(m_desktopFile->fileName());
+        const auto actions = service->actions();
+        for (const KServiceAction &action : actions) {
+            if (action.name() == shortcut.uniqueName()) {
+                job = new KIO::ApplicationLauncherJob(action);
+                break;
+            }
+        }
     }
+
+    Q_ASSERT(job);
+
+    auto *delegate = new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled);
+    // ApplicationLauncherJob refuses to launch desktop files in /usr/share/kglobalaccel/ unless they are marked as executable
+    // to avoid that add our own UntrustedProgramHandler that accepts the launch regardless
+    new UntrustedProgramHandler(delegate);
+    job->setUiDelegate(delegate);
+    if (QX11Info::isPlatformX11()) {
+        // Create a startup id ourselves. Otherwise ApplicationLauncherJob will query X11 to get a timestamp, which causes a deadlock
+        auto startupId = KStartupInfo::createNewStartupIdForTimestamp(QX11Info::appTime());
+        job->setStartupId(startupId);
+    }
+    job->start();
 }
 
 void KServiceActionComponent::loadFromService()
