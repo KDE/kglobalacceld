@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 
-extern "C" Q_DECL_EXPORT int main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     // On Wayland the shortcuts are ran as part of kwin_wayland
     // no-op when started on Wayland
