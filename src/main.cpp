@@ -17,10 +17,6 @@
 #include <QCommandLineParser>
 #include <QGuiApplication>
 
-#ifdef Q_OS_UNIX
-#include <unistd.h>
-#endif
-
 int main(int argc, char **argv)
 {
     // On Wayland the shortcuts are ran as part of kwin_wayland
@@ -56,18 +52,6 @@ int main(int argc, char **argv)
         parser.process(app);
         aboutdata.processCommandLine(&parser);
     }
-
-#ifdef Q_OS_UNIX
-    // It's possible that kglobalaccel gets started as the wrong user by
-    // accident, e.g. kdesu dolphin leads to dbus activation. It then installs
-    // its grabs and the actions are run as the wrong user.
-    bool isUidset = false;
-    const int sessionuid = qEnvironmentVariableIntValue("KDE_SESSION_UID", &isUidset);
-    if(isUidset && static_cast<uid_t>(sessionuid) != getuid()) {
-        qCWarning(KGLOBALACCELD) << "kglobalaccel running as wrong user, exiting.";
-        return 0;
-    }
-#endif
 
     KDBusService service(KDBusService::Unique);
 
