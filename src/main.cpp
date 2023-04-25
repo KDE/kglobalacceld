@@ -21,12 +21,6 @@
 #include <unistd.h>
 #endif
 
-static bool isEnabled()
-{
-    // TODO: Check if kglobalaccel can be disabled
-    return true;
-}
-
 extern "C" Q_DECL_EXPORT int main(int argc, char **argv)
 {
     // On Wayland the shortcuts are ran as part of kwin_wayland
@@ -61,12 +55,6 @@ extern "C" Q_DECL_EXPORT int main(int argc, char **argv)
         aboutdata.setupCommandLine(&parser);
         parser.process(app);
         aboutdata.processCommandLine(&parser);
-    }
-
-    // check if kglobalaccel is disabled
-    if (!isEnabled()) {
-        qCDebug(KGLOBALACCELD) << "kglobalaccel is disabled!";
-        return 0;
     }
 
 #ifdef Q_OS_UNIX
