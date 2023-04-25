@@ -1,6 +1,12 @@
 [Desktop Entry]
 Type=Application
 Name=Global Shortcuts
+Name[ca]=Dreceres globals
+Name[es]=Accesos rápidos globales
+Name[ia]=Vias Breve Global
+Name[nl]=Globale sneltoetsen
+Name[uk]=Загальні скорочення
+Name[x-test]=xxGlobal Shortcutsxx
 Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/kglobalacceld
 NoDisplay=true
 OnlyShowIn=KDE;
