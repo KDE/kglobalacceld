@@ -7,6 +7,7 @@
 */
 
 #include "kserviceactioncomponent.h"
+#include "globalshortcutcontext.h"
 #include "logging_p.h"
 
 #include <QDBusConnectionInterface>
@@ -112,6 +113,57 @@ bool KServiceActionComponent::cleanUp()
     }
 
     return Component::cleanUp();
+}
+
+void KServiceActionComponent::writeSettings(KConfigGroup &config) const
+{
+    // Clear the config so we remove entries after forgetGlobalShortcut
+    config.deleteGroup();
+
+    // Now write all contexts
+    for (GlobalShortcutContext *context : std::as_const(_contexts)) {
+        KConfigGroup contextGroup;
+
+        if (context->uniqueName() == QLatin1String("default")) {
+            contextGroup = config;
+        } else {
+            contextGroup = KConfigGroup(&config, context->uniqueName());
+        }
+
+        for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
+            // We do not write fresh shortcuts.
+            // We do not write session shortcuts
+            if (shortcut->isFresh() || shortcut->isSessionShortcut()) {
+                continue;
+            }
+
+            if (shortcut->keys() != shortcut->defaultKeys()) {
+                contextGroup.writeEntry(shortcut->uniqueName(), stringFromKeys(shortcut->keys()));
+            } else {
+                contextGroup.revertToDefault(shortcut->uniqueName());
+            }
+        }
+    }
+}
+
+void KServiceActionComponent::loadSettings(KConfigGroup &configGroup)
+{
+    // Action shortcuts
+    const auto actions = m_service->actions();
+    for (const KServiceAction &action : actions) {
+        const QString defaultShortcutString =
+            action.property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QString).toString().replace(QLatin1Char(','), QLatin1Char('\t'));
+        const QString shortcutString = configGroup.readEntry(action.name(), defaultShortcutString);
+        GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString);
+        shortcut->setIsPresent(true);
+    }
+
+    // lauch shortcut
+    const QString defaultShortcutString =
+        m_service->property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QString).toString().replace(QLatin1Char(','), QLatin1Char('\t'));
+    const QString shortcutString = configGroup.readEntry("_launch", defaultShortcutString);
+    GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, defaultShortcutString);
+    shortcut->setIsPresent(true);
 }
 
 #include "moc_kserviceactioncomponent.cpp"
