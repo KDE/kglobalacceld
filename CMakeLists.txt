@@ -33,6 +33,7 @@ include(ECMQtDeclareLoggingCategory)
 include(ECMPoQmTools)
 include(ECMDeprecationSettings)
 include(KDEClangFormat)
+include(ECMAddTests)
 
 # When kglobalacceld was still in frameworks/kglobalaccel and KF5-time deprecated API was dropped there,
 # some deprecated stuff in kglobalacceld was kept: "needs more consideration since it might break older consumers"
@@ -84,6 +85,10 @@ ecm_set_disabled_deprecation_versions(
 )
 
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+    add_subdirectory(autotests)
+endif()
 
 # create a Config.cmake and a ConfigVersion.cmake file and install them
 set(CMAKECONFIG_INSTALL_DIR "${KDE_INSTALL_CMAKEPACKAGEDIR}/KGlobalAccelD")

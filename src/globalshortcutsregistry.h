@@ -19,6 +19,8 @@
 #include <QKeySequence>
 #include <QObject>
 
+#include "kglobalaccel_export.h"
+
 class Component;
 class GlobalShortcut;
 class KGlobalAccelInterface;
@@ -38,7 +40,7 @@ class KGlobalAccelInterface;
  *
  * @author Michael Jansen <kde@michael-jansen.biz>
  */
-class GlobalShortcutsRegistry : public QObject
+class KGLOBALACCEL_EXPORT GlobalShortcutsRegistry : public QObject
 {
     Q_OBJECT
 
@@ -144,6 +146,7 @@ private:
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
     KServiceActionComponent *createServiceActionComponent(const QString &uniqueName);
     KServiceActionComponent *createServiceActionComponent(KService::Ptr service);
+    void migrateConfig();
 
     static void unregisterComponent(Component *component);
     using ComponentPtr = std::unique_ptr<Component, decltype(&unregisterComponent)>;
