@@ -142,7 +142,8 @@ private:
     friend class KGlobalAccelInterface;
 
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
-    KServiceActionComponent *createServiceActionComponent(const QString &uniqueName, const QString &friendlyName);
+    KServiceActionComponent *createServiceActionComponent(const QString &uniqueName);
+    KServiceActionComponent *createServiceActionComponent(KService::Ptr service);
 
     static void unregisterComponent(Component *component);
     using ComponentPtr = std::unique_ptr<Component, decltype(&unregisterComponent)>;

@@ -9,16 +9,11 @@
 #include "kserviceactioncomponent.h"
 #include "logging_p.h"
 
-#include <QDBusConnectionInterface>
 #include <QFileInfo>
-#include <QProcess>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/UntrustedProgramHandlerInterface>
 #include <KNotificationJobUiDelegate>
-#include <KService>
-#include <KShell>
-#include <KWindowSystem>
 
 #include "config-kglobalaccel.h"
 #if HAVE_X11
@@ -40,30 +35,19 @@ public:
     }
 };
 
-KServiceActionComponent::KServiceActionComponent(const QString &serviceStorageId, const QString &friendlyName)
-    : Component(serviceStorageId, friendlyName)
-    , m_serviceStorageId(serviceStorageId)
+QString makeUniqueName(const KService::Ptr &service)
 {
-    QString filePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("kglobalaccel/") + serviceStorageId);
-    if (filePath.isEmpty()) {
-        // Fallback to applications data dir for custom shortcut for instance
-        filePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("applications/") + serviceStorageId);
-        m_isInApplicationsDir = true;
-    } else {
-        QFileInfo info(filePath);
-        if (info.isSymLink()) {
-            const QString filePath2 = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("applications/") + serviceStorageId);
-            if (info.symLinkTarget() == filePath2) {
-                filePath = filePath2;
-                m_isInApplicationsDir = true;
-            }
-        }
+    if (service->storageId().startsWith(QLatin1Char('/'))) {
+        return QFileInfo(service->storageId()).fileName();
     }
 
-    if (filePath.isEmpty()) {
-        qCWarning(KGLOBALACCELD) << "No desktop file found for service " << serviceStorageId;
-    }
-    m_desktopFile.reset(new KDesktopFile(filePath));
+    return service->storageId();
+}
+
+KServiceActionComponent::KServiceActionComponent(KService::Ptr service)
+    : Component(makeUniqueName(service), service->name())
+    , m_service(service)
+{
 }
 
 KServiceActionComponent::~KServiceActionComponent() = default;
@@ -73,11 +57,9 @@ void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &sh
     KIO::ApplicationLauncherJob *job = nullptr;
 
     if (shortcut.uniqueName() == QLatin1String("_launch")) {
-        KService::Ptr service = KService::serviceByStorageId(m_desktopFile->fileName());
-        job = new KIO::ApplicationLauncherJob(service);
+        job = new KIO::ApplicationLauncherJob(m_service);
     } else {
-        KService::Ptr service = KService::serviceByStorageId(m_desktopFile->fileName());
-        const auto actions = service->actions();
+        const auto actions = m_service->actions();
         for (const KServiceAction &action : actions) {
             if (action.name() == shortcut.uniqueName()) {
                 job = new KIO::ApplicationLauncherJob(action);
@@ -103,16 +85,15 @@ void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &sh
 
 void KServiceActionComponent::loadFromService()
 {
-    auto registerGroupShortcut = [this](const QString &name, const KConfigGroup &group) {
-        const QString shortcutString = group.readEntry(QStringLiteral("X-KDE-Shortcuts"), QString()).replace(QLatin1Char(','), QLatin1Char('\t'));
-        GlobalShortcut *shortcut = registerShortcut(name, group.readEntry(QStringLiteral("Name"), QString()), shortcutString, shortcutString);
-        shortcut->setIsPresent(true);
-    };
+    const QString shortcutString = m_service->property(QStringLiteral("X-KDE-Shortcuts")).toStringList().join(QLatin1Char('\t'));
+    GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, shortcutString);
+    shortcut->setIsPresent(true);
 
-    registerGroupShortcut(QStringLiteral("_launch"), m_desktopFile->desktopGroup());
-    const auto lstActions = m_desktopFile->readActions();
-    for (const QString &action : lstActions) {
-        registerGroupShortcut(action, m_desktopFile->actionGroup(action));
+    const auto lstActions = m_service->actions();
+    for (const KServiceAction &action : lstActions) {
+        const QString shortcutString = action.property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QStringList).toStringList().join(QLatin1Char('\t'));
+        GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, shortcutString);
+        shortcut->setIsPresent(true);
     }
 }
 
