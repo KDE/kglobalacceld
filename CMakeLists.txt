@@ -33,6 +33,7 @@ include(ECMQtDeclareLoggingCategory)
 include(ECMPoQmTools)
 include(ECMDeprecationSettings)
 include(KDEClangFormat)
+include(ECMAddTests)
 
 set(EXCLUDE_DEPRECATED_BEFORE_AND_AT 0 CACHE STRING "Control the range of deprecated API excluded from the build [default=0].")
 
@@ -72,6 +73,10 @@ ecm_set_disabled_deprecation_versions(
 )
 
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+    add_subdirectory(autotests)
+endif()
 
 # create a Config.cmake and a ConfigVersion.cmake file and install them
 set(CMAKECONFIG_INSTALL_DIR "${KDE_INSTALL_CMAKEPACKAGEDIR}/KGlobalAccelD")

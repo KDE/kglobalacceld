@@ -78,11 +78,50 @@ static QString getConfigFile()
     return qEnvironmentVariableIsSet("KGLOBALACCEL_TEST_MODE") ? QString() : QStringLiteral("kglobalshortcutsrc");
 }
 
+/*
+ * Migrate the config for service actions to a new format that only stores the actual shortcut if not default.
+ * All other information is read from the desktop file.
+ * Keep the old data for compatibility with KF5-based kglobalaccel.
+ * Once Plasma 6 settles down consider dropping this data
+ */
+void GlobalShortcutsRegistry::migrateConfig()
+{
+    const QStringList groups = _config.groupList();
+
+    KConfigGroup services = _config.group("services");
+
+    for (const QString &componentName : groups) {
+        if (!componentName.endsWith(QLatin1String(".desktop"))) {
+            continue;
+        }
+
+        KConfigGroup component = _config.group(componentName);
+        KConfigGroup newGroup = services.group(componentName);
+
+        for (auto [key, value] : component.entryMap().asKeyValueRange()) {
+            if (key == QLatin1String("_k_friendly_name")) {
+                continue;
+            }
+
+            const QString shortcut = value.split(QLatin1Char(','))[0];
+            const QString defaultShortcut = value.split(QLatin1Char(','))[1];
+
+            if (shortcut != defaultShortcut) {
+                newGroup.writeEntry(key, shortcut);
+            }
+        }
+    }
+
+    _config.sync();
+}
+
 GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     : QObject()
     , _manager(loadPlugin(this))
     , _config(getConfigFile(), KConfig::SimpleConfig)
 {
+    migrateConfig();
+
     if (_manager) {
         _manager->setEnabled(true);
     }
@@ -392,8 +431,16 @@ void GlobalShortcutsRegistry::loadSettings()
         return;
     }
 
-    const auto groupList = _config.groupList();
+    auto groupList = _config.groupList();
     for (const QString &groupName : groupList) {
+        if (groupName == QLatin1String("services")) {
+            continue;
+        }
+
+        if (groupName.endsWith(QLatin1String(".desktop"))) {
+            continue;
+        }
+
         qCDebug(KGLOBALACCELD) << "Loading group " << groupName;
 
         Q_ASSERT(groupName.indexOf(QLatin1Char('\x1d')) == -1);
@@ -406,9 +453,41 @@ void GlobalShortcutsRegistry::loadSettings()
 
         const QString friendlyName = configGroup.readEntry("_k_friendly_name");
 
-        const bool isDesktop = groupName.endsWith(QLatin1String(".desktop"));
-        // Create the component
-        Component *component = isDesktop ? createServiceActionComponent(groupName) : createComponent(groupName, friendlyName);
+        Component *component = createComponent(groupName, friendlyName);
+
+        // Now load the contexts
+        const auto groupList = configGroup.groupList();
+        for (const QString &context : groupList) {
+            // Skip the friendly name group, this was previously used instead of _k_friendly_name
+            if (context == QLatin1String("Friendly Name")) {
+                continue;
+            }
+
+            KConfigGroup contextGroup(&configGroup, context);
+            QString contextFriendlyName = contextGroup.readEntry("_k_friendly_name");
+            component->createGlobalShortcutContext(context, contextFriendlyName);
+            component->activateGlobalShortcutContext(context);
+            component->loadSettings(contextGroup);
+        }
+
+        // Load the default context
+        component->activateGlobalShortcutContext(QStringLiteral("default"));
+        component->loadSettings(configGroup);
+    }
+
+    groupList = _config.group("services").groupList();
+    for (const QString &groupName : groupList) {
+        qCDebug(KGLOBALACCELD) << "Loading group " << groupName;
+
+        Q_ASSERT(groupName.indexOf(QLatin1Char('\x1d')) == -1);
+
+        // loadSettings isn't designed to be called in between. Only at the
+        // beginning.
+        Q_ASSERT(!getComponent(groupName));
+
+        KConfigGroup configGroup = _config.group("services").group(groupName);
+
+        Component *component = createServiceActionComponent(groupName);
 
         if (!component) {
             qDebug() << "could not create a component for " << groupName;
@@ -574,7 +653,10 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
 void GlobalShortcutsRegistry::writeSettings()
 {
     auto it = std::remove_if(m_components.begin(), m_components.end(), [this](const ComponentPtr &component) {
-        KConfigGroup configGroup(&_config, component->uniqueName());
+        bool isService = component->uniqueName().endsWith(QLatin1String(".desktop"));
+
+        KConfigGroup configGroup = isService ? _config.group("services").group(component->uniqueName()) : _config.group(component->uniqueName());
+
         if (component->allShortcuts().isEmpty()) {
             configGroup.deleteGroup();
             return true;
