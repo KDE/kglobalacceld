@@ -2,9 +2,13 @@
 Type=Application
 Name=Global Shortcuts
 Name[ca]=Dreceres globals
+Name[ca@valencia]=Dreceres globals
 Name[es]=Accesos rápidos globales
+Name[eu]=Lasterbide globalak
 Name[ia]=Vias Breve Global
+Name[ka]=გლობალური მალსახმობები
 Name[nl]=Globale sneltoetsen
+Name[tr]=Global Kısayollar
 Name[uk]=Загальні скорочення
 Name[x-test]=xxGlobal Shortcutsxx
 Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/kglobalacceld
