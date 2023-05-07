@@ -112,6 +112,7 @@ Component *GlobalShortcutsRegistry::registerComponent(ComponentPtr component)
 {
     m_components.push_back(std::move(component));
     auto *comp = m_components.back().get();
+    Q_ASSERT(!comp->dbusPath().path().isEmpty());
     QDBusConnection conn(QDBusConnection::sessionBus());
     conn.registerObject(comp->dbusPath().path(), comp, QDBusConnection::ExportScriptableContents);
     return comp;
@@ -373,6 +374,9 @@ KServiceActionComponent *GlobalShortcutsRegistry::createServiceActionComponent(c
 
     if (!service) {
         const QString filePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation, QLatin1String("kglobalaccel/") + uniqueName);
+        if (filePath.isEmpty()) {
+            return nullptr;
+        }
         service = new KService(filePath);
     }
 
@@ -405,6 +409,12 @@ void GlobalShortcutsRegistry::loadSettings()
         const bool isDesktop = groupName.endsWith(QLatin1String(".desktop"));
         // Create the component
         Component *component = isDesktop ? createServiceActionComponent(groupName) : createComponent(groupName, friendlyName);
+
+        if (!component) {
+            qDebug() << "could not create a component for " << groupName;
+            continue;
+        }
+        Q_ASSERT(!component->uniqueName().isEmpty());
 
         // Now load the contexts
         const auto groupList = configGroup.groupList();
