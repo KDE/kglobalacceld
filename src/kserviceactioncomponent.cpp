@@ -60,15 +60,16 @@ void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &sh
         job = new KIO::ApplicationLauncherJob(m_service);
     } else {
         const auto actions = m_service->actions();
-        for (const KServiceAction &action : actions) {
-            if (action.name() == shortcut.uniqueName()) {
-                job = new KIO::ApplicationLauncherJob(action);
-                break;
-            }
+        const auto it = std::find_if(actions.cbegin(), actions.cend(), [&shortcut](const KServiceAction &action) {
+            return action.name() == shortcut.uniqueName();
+        });
+        if (it == actions.cend()) {
+            qCCritical(KGLOBALACCELD, "failed to find an action matching the '%s' name", qPrintable(shortcut.uniqueName()));
+            return;
+        } else {
+            job = new KIO::ApplicationLauncherJob(*it);
         }
     }
-
-    Q_ASSERT(job);
 
     auto *delegate = new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled);
     // ApplicationLauncherJob refuses to launch desktop files in /usr/share/kglobalaccel/ unless they are marked as executable
