@@ -38,7 +38,7 @@ target_link_libraries(KGlobalAccelD
         KF6::ConfigCore
         KF6::Service
         KF6::KIOGui
-        KF6::Notifications
+        KF6::JobWidgets
 )
 
 set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
