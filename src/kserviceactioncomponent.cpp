@@ -87,7 +87,7 @@ void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &sh
 
 void KServiceActionComponent::loadFromService()
 {
-    const QString shortcutString = m_service->property(QStringLiteral("X-KDE-Shortcuts")).toStringList().join(QLatin1Char('\t'));
+    const QString shortcutString = m_service->property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).join(QLatin1Char('\t'));
     GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, shortcutString);
     shortcut->setIsPresent(true);
 
