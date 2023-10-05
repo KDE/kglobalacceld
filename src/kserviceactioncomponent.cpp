@@ -156,8 +156,7 @@ void KServiceActionComponent::loadSettings(KConfigGroup &configGroup)
     }
 
     // lauch shortcut
-    const QString defaultShortcutString =
-        m_service->property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QString).toString().replace(QLatin1Char(','), QLatin1Char('\t'));
+    const QString defaultShortcutString = m_service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).replace(QLatin1Char(','), QLatin1Char('\t'));
     const QString shortcutString = configGroup.readEntry("_launch", defaultShortcutString);
     GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, defaultShortcutString);
     shortcut->setIsPresent(true);
