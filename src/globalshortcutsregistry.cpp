@@ -15,6 +15,7 @@
 #include "logging_p.h"
 #include <config-kglobalaccel.h>
 
+#include <KDesktopFile>
 #include <KFileUtils>
 #include <KPluginMetaData>
 
@@ -113,6 +114,56 @@ void GlobalShortcutsRegistry::migrateConfig()
         }
 
         component.deleteGroup();
+    }
+
+    // Migrate dynamic shortcuts to service-based shortcuts
+    const QStringList desktopPaths =
+        QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("kglobalaccel"), QStandardPaths::LocateDirectory);
+
+    const QStringList desktopFiles = KFileUtils::findAllUniqueFiles(desktopPaths, {QStringLiteral("*.desktop")});
+
+    for (const QString &fileName : desktopFiles) {
+        KDesktopFile file(fileName);
+        const QString componentName = QFileInfo(fileName).fileName();
+
+        auto migrateTo = [this, componentName](KConfigGroup &group, const QString &actionName, const QString displayName) {
+            QString migrateFrom = group.readEntry<QString>(QStringLiteral("X-KDE-Migrate-Shortcut"), QString());
+
+            if (migrateFrom.isEmpty()) {
+                return;
+            }
+
+            const QStringList migrateFromParts = migrateFrom.split(QLatin1Char(','));
+
+            if (!_config.group(migrateFromParts[0]).hasKey(migrateFromParts[1])) {
+                // Probably already migrated
+                return;
+            }
+
+            const QString oldShortcut = _config.group(migrateFromParts[0]).readEntry<QStringList>(migrateFromParts[1], QStringList()).first();
+
+            const QString defaultShortcut = group.readEntry<QString>("X-KDE-Shortcuts", QString());
+
+            if (oldShortcut != defaultShortcut) {
+                _config.group(QStringLiteral("services")).group(componentName).writeEntry(actionName, oldShortcut);
+            }
+
+            _config.group(migrateFromParts[0]).deleteEntry(migrateFromParts[1]);
+
+            if (_config.group(migrateFromParts[0]).entryMap().size() == 1) {
+                // only _k_friendly_name left, remove the group
+                _config.deleteGroup(migrateFromParts[0]);
+            }
+        };
+
+        KConfigGroup desktopGroup = file.desktopGroup();
+        migrateTo(desktopGroup, QStringLiteral("_launch"), file.readName());
+
+        const QStringList actions = file.readActions();
+        for (const QString &action : actions) {
+            KConfigGroup actionGroup = file.actionGroup(action);
+            migrateTo(actionGroup, action, file.actionGroup(action).readEntry<QString>("Name", QString()));
+        }
     }
 
     _config.sync();

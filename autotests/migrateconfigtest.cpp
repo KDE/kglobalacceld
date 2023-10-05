@@ -38,13 +38,20 @@ private Q_SLOTS:
     void testMigrate()
     {
         QStandardPaths::setTestModeEnabled(true);
+        qunsetenv("XDG_DATA_DIRS");
 
         QDir configDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation));
         configDir.mkpath(QStringLiteral("."));
         configDir.remove(QStringLiteral("kglobalshortcutsrc"));
 
+        QDir dataDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
+        dataDir.mkpath(QStringLiteral("kglobalaccel"));
+
         QFile::copy(QFINDTESTDATA("kglobalshortcutsrc"),
                     QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QLatin1String("/kglobalshortcutsrc"));
+
+        QFile::copy(QFINDTESTDATA("org.kde.test.desktop"),
+                    QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/kglobalaccel/org.kde.test.desktop"));
 
         // Creating the registry will migrate the shortcut config
         GlobalShortcutsRegistry registry;

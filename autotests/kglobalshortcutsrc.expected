@@ -16,13 +16,11 @@ _k_friendly_name=Zugangshilfen
 [kcm_touchpad]
 Disable Touchpad=Touchpad Off,Touchpad Off,Touchpad abschalten
 Enable Touchpad=Touchpad On,Touchpad On,Touchpad aktivieren
-Toggle Touchpad=Touchpad Toggle\tMeta+Ctrl+Zenkaku Hankaku,Touchpad Toggle\tMeta+Ctrl+Zenkaku Hankaku,Touchpad umschalten
 _k_friendly_name=Touchpad
 
 [kded5]
 Show System Activity=Ctrl+Esc,Ctrl+Esc,Systemaktivität anzeigen
 _k_friendly_name=KDE Daemon
-display=Display\tMeta+P,Display\tMeta+P,Anzeige wechseln
 
 [khotkeys]
 _k_friendly_name=Dienst für eigene Kurzbefehle
@@ -278,6 +276,6 @@ kcm-lookandfeel=Meta+K
 kcm-users=Meta+B
 powerdevilprofilesconfig=none
 
-[yakuake]
-_k_friendly_name=Yakuake
-toggle-window-state=Meta+Space,F12,Yakuake einfahren/ausfahren
+[services][org.kde.test.desktop]
+_launch=Touchpad Toggle\tMeta+Ctrl+Zenkaku Hankaku
+dotest=Display\tMeta+P
