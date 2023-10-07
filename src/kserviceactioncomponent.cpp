@@ -93,7 +93,7 @@ void KServiceActionComponent::loadFromService()
 
     const auto lstActions = m_service->actions();
     for (const KServiceAction &action : lstActions) {
-        const QString shortcutString = action.property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QStringList).toStringList().join(QLatin1Char('\t'));
+        const QString shortcutString = action.property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).join(QLatin1Char('\t'));
         GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, shortcutString);
         shortcut->setIsPresent(true);
     }
@@ -147,8 +147,7 @@ void KServiceActionComponent::loadSettings(KConfigGroup &configGroup)
     // Action shortcuts
     const auto actions = m_service->actions();
     for (const KServiceAction &action : actions) {
-        const QString defaultShortcutString =
-            action.property(QStringLiteral("X-KDE-Shortcuts"), QMetaType::QString).toString().replace(QLatin1Char(','), QLatin1Char('\t'));
+        const QString defaultShortcutString = action.property<QString>(QStringLiteral("X-KDE-Shortcuts")).replace(QLatin1Char(','), QLatin1Char('\t'));
         const QString shortcutString = configGroup.readEntry(action.name(), defaultShortcutString);
 
         GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString);
