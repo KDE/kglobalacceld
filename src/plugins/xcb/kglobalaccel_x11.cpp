@@ -205,7 +205,7 @@ bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
         QString sDebug = QStringLiteral("\tcode: 0x%1 state: 0x%2 | ").arg(keyCodeX, 0, 16).arg(keyModX, 0, 16);
 #endif
         uint keyModMaskX = ~g_keyModMaskXOnOrOff;
-        QVector<xcb_void_cookie_t> cookies;
+        QList<xcb_void_cookie_t> cookies;
         for (uint irrelevantBitsMask = 0; irrelevantBitsMask <= 0xff; irrelevantBitsMask++) {
             if ((irrelevantBitsMask & keyModMaskX) == 0) {
 #ifndef NDEBUG

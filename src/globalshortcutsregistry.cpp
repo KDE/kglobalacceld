@@ -40,7 +40,7 @@ static KGlobalAccelInterface *loadPlugin(GlobalShortcutsRegistry *parent)
         platformName = QGuiApplication::platformName();
     }
 
-    const QVector<QStaticPlugin> staticPlugins = QPluginLoader::staticPlugins();
+    const QList<QStaticPlugin> staticPlugins = QPluginLoader::staticPlugins();
     for (const QStaticPlugin &staticPlugin : staticPlugins) {
         const QJsonObject metadata = staticPlugin.metaData();
         if (metadata.value(QLatin1String("IID")) != QLatin1String(KGlobalAccelInterface_iid)) {
@@ -56,7 +56,7 @@ static KGlobalAccelInterface *loadPlugin(GlobalShortcutsRegistry *parent)
         }
     }
 
-    const QVector<KPluginMetaData> candidates = KPluginMetaData::findPlugins(QStringLiteral("org.kde.kglobalacceld.platforms"));
+    const QList<KPluginMetaData> candidates = KPluginMetaData::findPlugins(QStringLiteral("org.kde.kglobalacceld.platforms"));
     for (const KPluginMetaData &candidate : candidates) {
         QPluginLoader loader(candidate.fileName());
         if (checkPlatform(loader.metaData(), platformName)) {
