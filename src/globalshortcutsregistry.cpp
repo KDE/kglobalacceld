@@ -335,14 +335,6 @@ bool GlobalShortcutsRegistry::keyPressed(int keyQt)
     data.append(shortcut->context()->component()->friendlyName());
     data.append(shortcut->friendlyName());
 
-    // Make sure kglobalacceld has ungrabbed the keyboard after receiving the
-    // keypress, otherwise actions in application that try to grab the
-    // keyboard (e.g. in kwin) may fail to do so. There is still a small race
-    // condition with this being out-of-process.
-    if (_manager) {
-        _manager->syncWindowingSystem();
-    }
-
     if (m_lastShortcut && m_lastShortcut != shortcut) {
         m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
     }
@@ -594,11 +586,6 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
     _active_keys.insert(key, shortcut);
 
     return true;
-}
-
-void GlobalShortcutsRegistry::setAccelManager(KGlobalAccelInterface *manager)
-{
-    _manager = manager;
 }
 
 void GlobalShortcutsRegistry::setDBusPath(const QDBusObjectPath &path)

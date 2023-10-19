@@ -176,13 +176,6 @@ void Component::emitGlobalShortcutPressed(const GlobalShortcut &shortcut)
 #if HAVE_X11
     // pass X11 timestamp
     const long timestamp = QX11Info::appTime();
-    // Make sure kglobalacceld has ungrabbed the keyboard after receiving the
-    // keypress, otherwise actions in application that try to grab the
-    // keyboard (e.g. in kwin) may fail to do so. There is still a small race
-    // condition with this being out-of-process.
-    if (_registry->_manager) {
-        _registry->_manager->syncWindowingSystem();
-    }
 #else
     const long timestamp = 0;
 #endif
@@ -199,13 +192,6 @@ void Component::emitGlobalShortcutReleased(const GlobalShortcut &shortcut)
 #if HAVE_X11
     // pass X11 timestamp
     const long timestamp = QX11Info::appTime();
-    // Make sure kglobalacceld has ungrabbed the keyboard after receiving the
-    // keypress, otherwise actions in application that try to grab the
-    // keyboard (e.g. in kwin) may fail to do so. There is still a small race
-    // condition with this being out-of-process.
-    if (_registry->_manager) {
-        _registry->_manager->syncWindowingSystem();
-    }
 #else
     const long timestamp = 0;
 #endif

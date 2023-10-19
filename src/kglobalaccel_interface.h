@@ -48,12 +48,6 @@ public:
      */
     virtual void setEnabled(bool) = 0;
 
-    /**
-     * Allows implementing plugins to synchronize with the windowing system.
-     * Default implementation does nothing.
-     **/
-    virtual void syncWindowingSystem();
-
     void setRegistry(GlobalShortcutsRegistry *registry);
 
 protected:

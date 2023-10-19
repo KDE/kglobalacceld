@@ -32,10 +32,6 @@ void KGlobalAccelInterface::setRegistry(GlobalShortcutsRegistry *registry)
     d->owner = registry;
 }
 
-void KGlobalAccelInterface::syncWindowingSystem()
-{
-}
-
 bool KGlobalAccelInterface::keyPressed(int keyQt)
 {
     return d->owner->keyPressed(keyQt);
