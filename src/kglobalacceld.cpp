@@ -17,8 +17,8 @@
 #include "kserviceactioncomponent.h"
 #include "logging_p.h"
 
+#include <QDBusConnection>
 #include <QDBusMetaType>
-#include <QDBusObjectPath>
 #include <QMetaMethod>
 #include <QTimer>
 
@@ -209,7 +209,7 @@ QList<QStringList> KGlobalAccelD::allMainComponents() const
 
 QList<QStringList> KGlobalAccelD::allActionsForComponent(const QStringList &actionId) const
 {
-    //### Would it be advantageous to sort the actions by unique name?
+    // ### Would it be advantageous to sort the actions by unique name?
     QList<QStringList> ret;
 
     Component *const component = d->m_registry->getComponent(actionId[KGlobalAccel::ComponentUnique]);

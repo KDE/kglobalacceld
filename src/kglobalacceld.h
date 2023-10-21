@@ -14,9 +14,10 @@
 #include <kglobalshortcutinfo.h>
 
 #include <KGlobalAccel>
+#include <QDBusContext>
+#include <QDBusObjectPath>
 #include <QList>
 #include <QStringList>
-#include <QtDBus>
 
 struct KGlobalAccelDPrivate;
 
