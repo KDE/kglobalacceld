@@ -138,8 +138,7 @@ public Q_SLOTS:
     void ungrabKeys();
 
 private:
-
-    friend class KGlobalAccelDPrivate;
+    friend struct KGlobalAccelDPrivate;
     friend class Component;
     friend class KGlobalAccelInterface;
 
