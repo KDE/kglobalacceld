@@ -78,8 +78,8 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KGLOBALACCELD
                         SOVERSION 0)
 
 ecm_set_disabled_deprecation_versions(
-    QT 6.4.0
-    KF 5.102.0
+    QT 6.6.0
+    KF 5.240.0
 )
 
 add_subdirectory(src)
