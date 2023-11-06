@@ -3,16 +3,16 @@ cmake_minimum_required(VERSION 3.16)
 project(kglobalacceld)
 
 set(PROJECT_VERSION "5.27.80")
-set(PROJECT_VERSION_MAJOR 5)
+set(PROJECT_VERSION_MAJOR 6)
 
 set(QT_MIN_VERSION "6.4.0")
-set(KF_DEP_VERSION "5.240.0")
+set(KF6_MIN_VERSION "5.240.0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FeatureSummary)
-find_package(ECM ${KF_DEP_VERSION}  NO_MODULE)
+find_package(ECM ${K6_MIN_VERSION}  NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://commits.kde.org/extra-cmake-modules")
 feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
@@ -50,15 +50,15 @@ endif()
 
 find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED DBus Gui Widgets)
 
-find_package(KF6Config ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6CoreAddons ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6Crash ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6DBusAddons ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6WindowSystem ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6GlobalAccel ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6Service ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6KIO ${KF_DEP_VERSION} REQUIRED)
-find_package(KF6JobWidgets ${KF_DEP_VERSION} REQUIRED)
+find_package(KF6Config ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6CoreAddons ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6Crash ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6DBusAddons ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6WindowSystem ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6GlobalAccel ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6Service ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6KIO ${KF6_MIN_VERSION} REQUIRED)
+find_package(KF6JobWidgets ${KF6_MIN_VERSION} REQUIRED)
 
 find_package(XCB MODULE COMPONENTS XCB KEYSYMS XKB RECORD OPTIONAL_COMPONENTS XTEST)
 set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding"
