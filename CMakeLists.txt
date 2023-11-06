@@ -75,7 +75,7 @@ endif()
 
 ecm_setup_version(PROJECT VARIABLE_PREFIX KGLOBALACCELD
                         PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/KGlobalAccelDConfigVersion.cmake"
-                        SOVERSION 0)
+                        SOVERSION ${PROJECT_VERSION_MAJOR})
 
 ecm_set_disabled_deprecation_versions(
     QT 6.6.0
