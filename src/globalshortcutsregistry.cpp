@@ -88,7 +88,7 @@ void GlobalShortcutsRegistry::migrateConfig()
 {
     const QStringList groups = _config.groupList();
 
-    KConfigGroup services = _config.group("services");
+    KConfigGroup services = _config.group(QStringLiteral("services"));
 
     for (const QString &componentName : groups) {
         if (!componentName.endsWith(QLatin1String(".desktop"))) {
@@ -467,7 +467,7 @@ void GlobalShortcutsRegistry::loadSettings()
         component->loadSettings(configGroup);
     }
 
-    groupList = _config.group("services").groupList();
+    groupList = _config.group(QStringLiteral("services")).groupList();
     for (const QString &groupName : groupList) {
         qCDebug(KGLOBALACCELD) << "Loading group " << groupName;
 
@@ -477,7 +477,7 @@ void GlobalShortcutsRegistry::loadSettings()
         // beginning.
         Q_ASSERT(!getComponent(groupName));
 
-        KConfigGroup configGroup = _config.group("services").group(groupName);
+        KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(groupName);
 
         Component *component = createServiceActionComponent(groupName);
 
@@ -642,7 +642,8 @@ void GlobalShortcutsRegistry::writeSettings()
     auto it = std::remove_if(m_components.begin(), m_components.end(), [this](const ComponentPtr &component) {
         bool isService = component->uniqueName().endsWith(QLatin1String(".desktop"));
 
-        KConfigGroup configGroup = isService ? _config.group("services").group(component->uniqueName()) : _config.group(component->uniqueName());
+        KConfigGroup configGroup =
+            isService ? _config.group(QStringLiteral("services")).group(component->uniqueName()) : _config.group(component->uniqueName());
 
         if (component->allShortcuts().isEmpty()) {
             configGroup.deleteGroup();

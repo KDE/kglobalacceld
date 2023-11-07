@@ -54,7 +54,7 @@ private Q_SLOTS:
         KConfig expected(QFINDTESTDATA("kglobalshortcutsrc.expected"));
 
         compareGroupList(actual, expected);
-        compareGroupList(actual.group("services"), expected.group("services"));
+        compareGroupList(actual.group(QStringLiteral("services")), expected.group(QStringLiteral("services")));
     }
 };
 
