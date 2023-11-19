@@ -60,17 +60,17 @@ find_package(KF6Service ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6KIO ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6JobWidgets ${KF6_MIN_VERSION} REQUIRED)
 
-find_package(XCB MODULE COMPONENTS XCB KEYSYMS XKB RECORD OPTIONAL_COMPONENTS XTEST)
-set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding"
-                    TYPE OPTIONAL
-                    )
 
-find_package(X11)
+option(WITH_X11 "Build with X11 support." ON)
 
-set(HAVE_X11 0)
-
-if(X11_FOUND AND XCB_XCB_FOUND)
+if(WITH_X11)
+    find_package(XCB MODULE COMPONENTS XCB KEYSYMS XKB RECORD OPTIONAL_COMPONENTS XTEST)
+    set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding"
+                        TYPE REQUIRED
+                        )
     set(HAVE_X11 1)
+else()
+    set(HAVE_X11 0)
 endif()
 
 ecm_setup_version(PROJECT VARIABLE_PREFIX KGLOBALACCELD
