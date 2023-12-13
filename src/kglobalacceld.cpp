@@ -115,14 +115,14 @@ Component *KGlobalAccelDPrivate::component(const QStringList &actionId) const
     const QString friendlyName = actionId.at(KGlobalAccel::ComponentFriendly);
     if (uniqueName.endsWith(QLatin1String(".desktop"))) {
         auto *actionComp = m_registry->createServiceActionComponent(uniqueName);
-        Q_ASSERT(actionComp);
+        if (!actionComp) {
+            return nullptr;
+        }
         actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
         actionComp->loadFromService();
         return actionComp;
     } else {
-        auto *comp = m_registry->createComponent(uniqueName, friendlyName);
-        Q_ASSERT(comp);
-        return comp;
+        return m_registry->createComponent(uniqueName, friendlyName);
     }
 }
 
@@ -139,7 +139,9 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
     // Create the component if necessary
     Component *component = this->component(actionIdTmp);
-    Q_ASSERT(component);
+    if (!component) {
+        return nullptr;
+    }
 
     // Create the context if necessary
     if (component->getShortcutContexts().count(contextUnique) == 0) {
