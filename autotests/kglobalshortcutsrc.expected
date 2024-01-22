@@ -224,33 +224,6 @@ playpausemedia=Media Play,Media Play,Medienwiedergabe starten/anhalten
 previousmedia=Media Previous,Media Previous,Vorheriges Medium wiedergeben
 stopmedia=Media Stop,Media Stop,Medienwiedergabe anhalten
 
-[org.kde.dolphin.desktop]
-_k_friendly_name=Dolphin
-_launch=Meta+E,Meta+E,Dolphin
-
-[org.kde.kcalc.desktop]
-_k_friendly_name=KCalc
-_launch=Launch (1),Launch (1),KCalc
-
-[org.kde.krunner.desktop]
-RunClipboard=Alt+Shift+F2,Alt+Shift+F2,Befehl mit dem Inhalt der Zwischenablage ausführen
-_k_friendly_name=KRunner
-_launch=Alt+Space\tAlt+F2\tSearch,Alt+Space\tAlt+F2\tSearch,KRunner
-
-[org.kde.plasma.emojier.desktop]
-_k_friendly_name=Emoji-Auswahl
-_launch=Meta+.\tMeta+Ctrl+Alt+Shift+Space,Meta+.\tMeta+Ctrl+Alt+Shift+Space,Emoji-Auswahl
-
-[org.kde.spectacle.desktop]
-ActiveWindowScreenShot=Shift+Print,Meta+Print,Das aktive Fenster aufnehmen
-CurrentMonitorScreenShot=none,none,Den aktuellen Bildschirm aufnehmen
-FullScreenScreenShot=Meta+Print,Shift+Print,Die gesamte Arbeitsfläche aufnehmen
-OpenWithoutScreenshot=none,none,Ohne Aufnahme eines Bildschirmfotos starten
-RectangularRegionScreenShot=Meta+Shift+Print,Meta+Shift+Print,Einen rechteckigen Bereich aufnehmen
-WindowUnderCursorScreenShot=Meta+Ctrl+Print,Meta+Ctrl+Print,Fenster unter dem Mauszeiger aufnehmen
-_k_friendly_name=Spectacle
-_launch=none,Print,Spectacle
-
 [org_kde_powerdevil]
 Decrease Keyboard Brightness=Keyboard Brightness Down,Keyboard Brightness Down,Helligkeit der Tastatur-Hintergrundbeleuchtung verringern
 Decrease Screen Brightness=Monitor Brightness Down,Monitor Brightness Down,Bildschirmhelligkeit verringern
@@ -304,15 +277,6 @@ _launch=none
 kcm-lookandfeel=Meta+K
 kcm-users=Meta+B
 powerdevilprofilesconfig=none
-
-[systemsettings.desktop]
-_k_friendly_name=Systemeinstellungen
-_launch=Tools,Tools,Systemeinstellungen
-kcm-kscreen=none,none,Anzeige-Einrichtung
-kcm-lookandfeel=Meta+K,none,Globales Design
-kcm-users=Meta+B,none,Benutzer
-powerdevilprofilesconfig=none,Meta+Y,Energiesparen
-screenlocker=none,none,Bildschirmsperre
 
 [yakuake]
 _k_friendly_name=Yakuake
