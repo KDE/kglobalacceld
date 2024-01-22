@@ -111,6 +111,8 @@ void GlobalShortcutsRegistry::migrateConfig()
                 newGroup.writeEntry(key, shortcut);
             }
         }
+
+        component.deleteGroup();
     }
 
     _config.sync();
