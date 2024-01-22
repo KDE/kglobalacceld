@@ -1,0 +1,8 @@
+[kstuff]
+Launch=Meta+K,Meta+K,Launch
+
+[kded5]
+Display=Meta+Y,none,Display
+
+[org.kde.bar.desktop]
+DoSomething=Meta+Z,Meta+X,Do Something

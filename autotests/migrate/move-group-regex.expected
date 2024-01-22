@@ -1,0 +1,8 @@
+[kstuff]
+Launch=Meta+K,Meta+K,Launch
+
+[services][org.kde.foo.desktop]
+_launch=none
+
+[services][org.kde.fizzbazz.desktop]
+_launch=Meta+W

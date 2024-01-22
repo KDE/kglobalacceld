@@ -62,6 +62,7 @@ target_link_libraries(kglobalacceld
     )
 
 add_subdirectory(plugins)
+add_subdirectory(tools)
 
 install(TARGETS KGlobalAccelD EXPORT KGlobalAccelDTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
 install(TARGETS kglobalacceld DESTINATION ${KDE_INSTALL_LIBEXECDIR})

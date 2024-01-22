@@ -1,0 +1,11 @@
+[kstuff]
+Launch=Meta+K,Meta+K,Launch
+
+[org.kde.foo.desktop]
+_launch=none,Meta+P,Foo
+
+[org.kde.bar.desktop]
+DoSomething=Meta+X,Meta+X,Do Something
+
+[org.kde.fizzbazz.desktop]
+_launch=Meta+W,none,Toggle

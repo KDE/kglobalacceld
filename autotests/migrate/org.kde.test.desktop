@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Name=Test Service
+Exec=/bin/false
+X-KDE-Shortcuts=Meta+T
+Actions=dotest;dotest2;dotest3;
+
+[Desktop Action dotest]
+Name=Testing
+Exec=/bin/false
+X-KDE-Shortcuts=Meta+Shift+T
+
+[Desktop Action dotest2]
+Name=Testing 2
+Exec=/bin/false
+X-KDE-Shortcuts=Meta+Space
+
+[Desktop Action dotest3]
+Name=Testing 3
+Exec=/bin/false
