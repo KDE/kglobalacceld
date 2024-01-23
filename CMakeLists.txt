@@ -73,6 +73,13 @@ else()
     set(HAVE_X11 0)
 endif()
 
+find_program(qdbus_EXECUTABLE NAMES qdbus qdbus6 qdbus-qt6)
+
+if (NOT qdbus_EXECUTABLE)
+    message("fall")
+    set(qdbus_EXECUTABLE "qdbus")
+endif()
+
 ecm_setup_version(PROJECT VARIABLE_PREFIX KGLOBALACCELD
                         PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/KGlobalAccelDConfigVersion.cmake"
                         SOVERSION 0)
