@@ -140,11 +140,13 @@ void GlobalShortcutsRegistry::migrateConfig()
                 return;
             }
 
-            const QString oldShortcut = _config.group(migrateFromParts[0]).readEntry<QStringList>(migrateFromParts[1], QStringList()).first();
+            const QStringList shortcutTriple = _config.group(migrateFromParts[0]).readEntry<QStringList>(migrateFromParts[1], QStringList());
+            const QString oldShortcut = shortcutTriple[0];
+            const QString oldDefaultShortcut = shortcutTriple[1];
+            const QString newDefaultShortcut = group.readEntry<QString>("X-KDE-Shortcuts", QString());
 
-            const QString defaultShortcut = group.readEntry<QString>("X-KDE-Shortcuts", QString());
-
-            if (oldShortcut != defaultShortcut) {
+            // Only write value if it is not the old or new default
+            if (oldShortcut != oldDefaultShortcut && oldShortcut != newDefaultShortcut) {
                 _config.group(QStringLiteral("services")).group(componentName).writeEntry(actionName, oldShortcut);
             }
 
