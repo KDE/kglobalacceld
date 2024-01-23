@@ -80,6 +80,82 @@ static QString getConfigFile()
     return qEnvironmentVariableIsSet("KGLOBALACCEL_TEST_MODE") ? QString() : QStringLiteral("kglobalshortcutsrc");
 }
 
+void GlobalShortcutsRegistry::migrateKHotkeys()
+{
+    KConfig hotkeys(QStringLiteral("khotkeysrc"));
+
+    int dataCount = hotkeys.group(QStringLiteral("Data")).readEntry("DataCount", 0);
+
+    for (int i = 1; i <= dataCount; ++i) {
+        const QString groupName = QStringLiteral("Data_") + QString::number(i);
+
+        KConfigGroup dataGroup(&hotkeys, groupName);
+
+        if (dataGroup.readEntry("Type") != QLatin1String("SIMPLE_ACTION_DATA")) {
+            continue;
+        }
+
+        const QString name = dataGroup.readEntry("Name");
+
+        QString exec;
+        QString uuid;
+
+        int actionsCount = KConfigGroup(&hotkeys, groupName + QLatin1String("Actions")).readEntry("ActionsCount", 0);
+
+        for (int i = 0; i < actionsCount; ++i) {
+            KConfigGroup actionGroup = KConfigGroup(&hotkeys, groupName + QLatin1String("Actions") + QString::number(i));
+            const QString type = actionGroup.readEntry("Type");
+
+            if (type == QLatin1String("COMMAND_URL")) {
+                exec = actionGroup.readEntry("CommandURL");
+            } else if (type == QLatin1String("DBUS")) {
+                exec = QStringLiteral(QT_STRINGIFY(QDBUS) " %1 %2 %3")
+                           .arg(actionGroup.readEntry("RemoteApp"), actionGroup.readEntry("RemoteObj"), actionGroup.readEntry("Call"));
+
+                const QString args = actionGroup.readEntry("Arguments");
+
+                if (!args.isEmpty()) {
+                    exec += QLatin1Char(' ') + args;
+                }
+            }
+        }
+
+        if (exec.isEmpty()) {
+            continue;
+        }
+
+        int triggerCount = KConfigGroup(&hotkeys, groupName + QLatin1String("Triggers")).readEntry("TriggersCount", 0);
+
+        for (int i = 0; i < triggerCount; ++i) {
+            KConfigGroup triggerGroup = KConfigGroup(&hotkeys, groupName + QLatin1String("Triggers") + QString::number(i));
+            if (triggerGroup.readEntry("Type") != QLatin1String("SHORTCUT")) {
+                continue;
+            }
+
+            uuid = triggerGroup.readEntry("Uuid");
+        }
+
+        const QString kglobalaccelEntry = _config.group(QStringLiteral("khotkeys")).readEntry(uuid);
+
+        if (kglobalaccelEntry.isEmpty()) {
+            continue;
+        }
+
+        const QString key = kglobalaccelEntry.split(QLatin1Char(',')).first();
+
+        KDesktopFile file(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/kglobalaccel/") + uuid
+                          + QLatin1String(".desktop"));
+        file.desktopGroup().writeEntry("Type", "Application");
+        file.desktopGroup().writeEntry("Name", name);
+        file.desktopGroup().writeEntry("Exec", exec);
+        file.desktopGroup().writeEntry("X-KDE-GlobalAccel-CommandShortcut", true);
+        file.desktopGroup().writeEntry("StartupNotify", false);
+
+        _config.group(QStringLiteral("services")).group(uuid + QLatin1String(".desktop")).writeEntry("_launch", kglobalaccelEntry);
+        _config.group(QStringLiteral("khotkeys")).revertToDefault(uuid);
+    }
+}
+
 /*
  * Migrate the Plasma 5 config for service actions to a new format that only stores the actual shortcut if not default.
  * All other information is read from the desktop file.
@@ -174,6 +250,7 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     , _manager(loadPlugin(this))
     , _config(getConfigFile(), KConfig::SimpleConfig)
 {
+    migrateKHotkeys();
     migrateConfig();
 
     if (_manager) {

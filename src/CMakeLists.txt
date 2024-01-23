@@ -46,6 +46,8 @@ set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
                                                 EXPORT_NAME "KGlobalAccelD"
 )
 
+target_compile_definitions(KGlobalAccelD PRIVATE -DQDBUS=${qdbus_EXECUTABLE})
+
 if(XCB_XCB_FOUND)
     target_link_libraries(KGlobalAccelD PUBLIC Qt6::GuiPrivate) # qtx11extras_p.h
 endif()
