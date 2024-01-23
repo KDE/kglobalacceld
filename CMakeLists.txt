@@ -84,6 +84,7 @@ ecm_set_disabled_deprecation_versions(
     KF 5.240.0
 )
 
+add_subdirectory(kconf_update)
 add_subdirectory(src)
 
 if(BUILD_TESTING)

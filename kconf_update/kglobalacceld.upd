@@ -1,0 +1,4 @@
+Version=6
+
+Id=move_desktop_components_to_services
+Script=move-desktop-components-to-services-6.0.sh,sh

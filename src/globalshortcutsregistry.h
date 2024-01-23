@@ -143,7 +143,6 @@ private:
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
     KServiceActionComponent *createServiceActionComponent(const QString &uniqueName);
     KServiceActionComponent *createServiceActionComponent(KService::Ptr service);
-    void migrateConfig();
 
     static void unregisterComponent(Component *component);
     using ComponentPtr = std::unique_ptr<Component, decltype(&unregisterComponent)>;

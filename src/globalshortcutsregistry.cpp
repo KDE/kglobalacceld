@@ -79,52 +79,11 @@ static QString getConfigFile()
     return qEnvironmentVariableIsSet("KGLOBALACCEL_TEST_MODE") ? QString() : QStringLiteral("kglobalshortcutsrc");
 }
 
-/*
- * Migrate the config for service actions to a new format that only stores the actual shortcut if not default.
- * All other information is read from the desktop file.
- * Keep the old data for compatibility with KF5-based kglobalaccel.
- * Once Plasma 6 settles down consider dropping this data
- */
-void GlobalShortcutsRegistry::migrateConfig()
-{
-    const QStringList groups = _config.groupList();
-
-    KConfigGroup services = _config.group(QStringLiteral("services"));
-
-    for (const QString &componentName : groups) {
-        if (!componentName.endsWith(QLatin1String(".desktop"))) {
-            continue;
-        }
-
-        KConfigGroup component = _config.group(componentName);
-        KConfigGroup newGroup = services.group(componentName);
-
-        for (auto [key, value] : component.entryMap().asKeyValueRange()) {
-            if (key == QLatin1String("_k_friendly_name")) {
-                continue;
-            }
-
-            const QString shortcut = value.split(QLatin1Char(','))[0];
-            const QString defaultShortcut = value.split(QLatin1Char(','))[1];
-
-            if (shortcut != defaultShortcut) {
-                newGroup.writeEntry(key, shortcut);
-            }
-        }
-
-        component.deleteGroup();
-    }
-
-    _config.sync();
-}
-
 GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     : QObject()
     , _manager(loadPlugin(this))
     , _config(getConfigFile(), KConfig::SimpleConfig)
 {
-    migrateConfig();
-
     if (_manager) {
         _manager->setEnabled(true);
     }
