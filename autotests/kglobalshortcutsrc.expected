@@ -277,5 +277,4 @@ kcm-users=Meta+B
 powerdevilprofilesconfig=none
 
 [services][org.kde.test.desktop]
-_launch=Touchpad Toggle\tMeta+Ctrl+Zenkaku Hankaku
-dotest=Display\tMeta+P
+_launch=Meta+U
