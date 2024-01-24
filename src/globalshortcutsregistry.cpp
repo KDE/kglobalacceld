@@ -81,10 +81,8 @@ static QString getConfigFile()
 }
 
 /*
- * Migrate the config for service actions to a new format that only stores the actual shortcut if not default.
+ * Migrate the Plasma 5 config for service actions to a new format that only stores the actual shortcut if not default.
  * All other information is read from the desktop file.
- * Keep the old data for compatibility with KF5-based kglobalaccel.
- * Once Plasma 6 settles down consider dropping this data
  */
 void GlobalShortcutsRegistry::migrateConfig()
 {
