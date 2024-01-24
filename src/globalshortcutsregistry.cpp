@@ -126,7 +126,7 @@ void GlobalShortcutsRegistry::migrateConfig()
         KDesktopFile file(fileName);
         const QString componentName = QFileInfo(fileName).fileName();
 
-        auto migrateTo = [this, componentName](KConfigGroup &group, const QString &actionName, const QString displayName) {
+        auto migrateTo = [this, componentName](KConfigGroup &group, const QString &actionName) {
             QString migrateFrom = group.readEntry<QString>(QStringLiteral("X-KDE-Migrate-Shortcut"), QString());
 
             if (migrateFrom.isEmpty()) {
@@ -159,12 +159,12 @@ void GlobalShortcutsRegistry::migrateConfig()
         };
 
         KConfigGroup desktopGroup = file.desktopGroup();
-        migrateTo(desktopGroup, QStringLiteral("_launch"), file.readName());
+        migrateTo(desktopGroup, QStringLiteral("_launch"));
 
         const QStringList actions = file.readActions();
         for (const QString &action : actions) {
             KConfigGroup actionGroup = file.actionGroup(action);
-            migrateTo(actionGroup, action, file.actionGroup(action).readEntry<QString>("Name", QString()));
+            migrateTo(actionGroup, action);
         }
     }
 
