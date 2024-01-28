@@ -381,11 +381,9 @@ GlobalShortcutsRegistry *GlobalShortcutsRegistry::self()
     return _self;
 }
 
-/**
- * When we are provided just a Shift key press, interpret it as "Shift" not as "Shift+Shift"
- */
 static void correctKeyEvent(int &keyQt)
 {
+    // When we are provided just a Shift key press, interpret it as "Shift" not as "Shift+Shift"
     switch (keyQt) {
     case (Qt::ShiftModifier | Qt::Key_Shift).toCombined():
         keyQt = Qt::Key_Shift;
@@ -399,6 +397,15 @@ static void correctKeyEvent(int &keyQt)
     case (Qt::MetaModifier | Qt::Key_Meta).toCombined():
         keyQt = Qt::Key_Meta;
         break;
+    }
+    // Known limitation:
+    //     When shortcut is Mod(s)+Alt+Print, only works when Alt is released before Mod(s),
+    //     Does not work with multikey shortcuts.
+    // When the user presses Mod(s)+Alt+Print, the SysReq event is fired only
+    // when the Alt key is released. Before we get the Mod(s)+SysReq event, we
+    // first get a Mod(s)+Alt event, breaking multikey shortcuts.
+    if ((keyQt & ~Qt::KeyboardModifierMask) == Qt::Key_SysReq) {
+        keyQt = Qt::Key_Print | (keyQt & Qt::KeyboardModifierMask) | Qt::AltModifier;
     }
 }
 
