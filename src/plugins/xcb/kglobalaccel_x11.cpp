@@ -154,7 +154,6 @@ bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
     }
 
     uint keyModX;
-    xcb_keysym_t keySymX;
 
     // Resolve the modifier
     if (!KKeyServer::keyQtToModX(keyQt, &keyModX)) {
@@ -163,12 +162,21 @@ bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
     }
 
     // Resolve the X symbol
-    if (!KKeyServer::keyQtToSymX(keyQt, (int *)&keySymX)) {
+    const QList<int> keySymXs(KKeyServer::keyQtToSymXs(keyQt));
+    if (keySymXs.empty()) {
         qCDebug(KGLOBALACCELD) << "keyQt (0x" << Qt::hex << keyQt << ") failed to resolve to x11 keycode";
         return false;
     }
+    xcb_keycode_t *keyCodes = nullptr;
+    xcb_keysym_t keySymX;
+    for (xcb_keysym_t sym : keySymXs) {
+        keyCodes = xcb_key_symbols_get_keycode(m_keySymbols, sym);
+        if (keyCodes) {
+            keySymX = sym;
+            break;
+        }
+    }
 
-    xcb_keycode_t *keyCodes = xcb_key_symbols_get_keycode(m_keySymbols, keySymX);
     if (!keyCodes) {
         return false;
     }
