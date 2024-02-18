@@ -422,6 +422,11 @@ static void correctKeyEvent(int &keyQt)
 bool GlobalShortcutsRegistry::keyPressed(int keyQt)
 {
     correctKeyEvent(keyQt);
+    return processKey(keyQt);
+}
+
+bool GlobalShortcutsRegistry::processKey(int keyQt)
+{
     int keys[maxSequenceLength] = {0, 0, 0, 0};
     int count = _active_sequence.count();
     if (count == maxSequenceLength) {
@@ -457,7 +462,7 @@ bool GlobalShortcutsRegistry::keyPressed(int keyQt)
         }
     }
 
-    qCDebug(KGLOBALACCELD) << "Pressed key" << QKeySequence(keyQt).toString() << ", current sequence" << _active_sequence.toString() << "="
+    qCDebug(KGLOBALACCELD) << "Processed key" << QKeySequence(keyQt).toString() << ", current sequence" << _active_sequence.toString() << "="
                            << (shortcut ? shortcut->uniqueName() : QStringLiteral("(no shortcut found)"));
     if (!shortcut) {
         // This can happen for example with the ALT-Print shortcut of kwin.

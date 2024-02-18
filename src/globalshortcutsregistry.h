@@ -156,6 +156,8 @@ private:
     bool keyPressed(int keyQt);
     bool keyReleased(int keyQt);
 
+    bool processKey(int keyQt);
+
     QHash<QKeySequence, GlobalShortcut *> _active_keys;
     QKeySequence _active_sequence;
     QHash<int, int> _keys_count;
