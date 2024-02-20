@@ -13,6 +13,7 @@
 #include "kglobalshortcutinfo_p.h"
 #include "kserviceactioncomponent.h"
 #include "logging_p.h"
+#include "sequencehelpers_p.h"
 #include <config-kglobalaccel.h>
 
 #include <KDesktopFile>
@@ -401,28 +402,28 @@ static void correctKeyEvent(int &keyQt)
         break;
     }
     keyQt = keySym | keyMod;
-
-    // When we are provided just a Shift key press, interpret it as "Shift" not as "Shift+Shift"
-    switch (keyQt) {
-    case (Qt::ShiftModifier | Qt::Key_Shift).toCombined():
-        keyQt = Qt::Key_Shift;
-        break;
-    case (Qt::ControlModifier | Qt::Key_Control).toCombined():
-        keyQt = Qt::Key_Control;
-        break;
-    case (Qt::AltModifier | Qt::Key_Alt).toCombined():
-        keyQt = Qt::Key_Alt;
-        break;
-    case (Qt::MetaModifier | Qt::Key_Meta).toCombined():
-        keyQt = Qt::Key_Meta;
-        break;
-    }
 }
 
 bool GlobalShortcutsRegistry::keyPressed(int keyQt)
 {
     correctKeyEvent(keyQt);
-    return processKey(keyQt);
+    const int key = keyQt & ~Qt::KeyboardModifierMask;
+    const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
+    switch (key) {
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Alt:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case Qt::Key_Meta:
+        m_state = PressingModifierOnly;
+        m_currentModifiers = Utils::keyToModifier(key) | modifiers;
+        return false;
+    default:
+        m_state = Normal;
+        m_currentModifiers = modifiers;
+        return processKey(keyQt);
+    }
 }
 
 bool GlobalShortcutsRegistry::processKey(int keyQt)
@@ -503,12 +504,42 @@ bool GlobalShortcutsRegistry::processKey(int keyQt)
 
 bool GlobalShortcutsRegistry::keyReleased(int keyQt)
 {
-    Q_UNUSED(keyQt)
+    correctKeyEvent(keyQt);
+    bool handled = false;
+    const int key = keyQt & ~Qt::KeyboardModifierMask;
+    const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
+    switch (key) {
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case Qt::Key_Meta:
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Alt: {
+        constexpr auto releaseTimeout = std::chrono::milliseconds(200);
+        const auto currentTime = std::chrono::steady_clock::now().time_since_epoch();
+        if (m_state == PressingModifierOnly) {
+            m_modifierOnlyModifiers = m_currentModifiers;
+            m_state = ReleasingModifierOnly;
+            m_modifierFirstReleaseTime = currentTime;
+        }
+        m_currentModifiers = modifiers & ~Utils::keyToModifier(key);
+        if (m_state == ReleasingModifierOnly && !m_currentModifiers) {
+            m_state = Normal;
+            if (currentTime - m_modifierFirstReleaseTime < releaseTimeout) {
+                handled = processKey(m_modifierOnlyModifiers);
+            }
+        }
+        break;
+    }
+    default:
+        m_state = Normal;
+        break;
+    }
     if (m_lastShortcut) {
         m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
         m_lastShortcut = nullptr;
     }
-    return false;
+    return handled;
 }
 
 Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, const QString &friendlyName)

@@ -15,6 +15,8 @@ KGLOBALACCEL_EXPORT QKeySequence cropKey(const QKeySequence &key, int count);
 
 bool contains(const QKeySequence &key, const QKeySequence &other);
 
+Qt::KeyboardModifiers keyToModifier(int key);
+
 KGLOBALACCEL_EXPORT bool matchSequences(const QKeySequence &key, const QList<QKeySequence> &keys);
 
 KGLOBALACCEL_EXPORT QKeySequence mangleKey(const QKeySequence &key);

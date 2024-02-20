@@ -59,6 +59,25 @@ bool contains(const QKeySequence &key, const QKeySequence &other)
     return ret;
 }
 
+Qt::KeyboardModifiers keyToModifier(int key)
+{
+    switch (key) {
+    case Qt::Key_Meta:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+        // Qt doesn't properly recognize Super_L/Super_R as MetaModifier
+        return Qt::MetaModifier;
+    case Qt::Key_Shift:
+        return Qt::ShiftModifier;
+    case Qt::Key_Control:
+        return Qt::ControlModifier;
+    case Qt::Key_Alt:
+        return Qt::AltModifier;
+    default:
+        return Qt::NoModifier;
+    }
+}
+
 bool matchSequences(const QKeySequence &key, const QList<QKeySequence> &keys)
 {
     // Since we're testing sequences, we need to check for all possible matches
@@ -82,6 +101,24 @@ bool matchSequences(const QKeySequence &key, const QList<QKeySequence> &keys)
     return false;
 }
 
+static int normalizeKey(int keyQt)
+{
+    int key = keyQt & ~Qt::KeyboardModifierMask;
+    int mod = keyQt & Qt::KeyboardModifierMask;
+    switch (key) {
+    case Qt::Key_Shift:
+        return mod | Qt::ShiftModifier;
+    case Qt::Key_Control:
+        return mod | Qt::ControlModifier;
+    case Qt::Key_Alt:
+        return mod | Qt::AltModifier;
+    case Qt::Key_Meta:
+        return mod | Qt::MetaModifier;
+    default:
+        return keyQt;
+    }
+}
+
 QKeySequence mangleKey(const QKeySequence &key)
 {
     // Qt triggers both shortcuts that include Shift+Backtab and Shift+Tab
@@ -95,7 +132,7 @@ QKeySequence mangleKey(const QKeySequence &key)
         if ((keyMod & Qt::SHIFT) && (keySym == Qt::Key_Backtab || keySym == Qt::Key_Tab)) {
             k[i] = keyMod | Qt::Key_Tab;
         } else {
-            k[i] = key[i].toCombined();
+            k[i] = normalizeKey(key[i].toCombined());
         }
     }
 
