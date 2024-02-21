@@ -66,17 +66,17 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
         m_xkb_first_event = reply->first_event;
     }
 
-    // We use XRecord to get the released keys because we need a way to get notified about
-    // them without needing to hold a grab
-    // Holding a grab would be a problem for the cases when a process (looking at you KWin's
-    // toolbox) replies to a global shortcut trigger with another grab
+    // We use XRecord to get events XCB_KEY_PRESS, XCB_KEY_RELEASE, XCB_BUTTON_PRESS
+    // This is needed to correctly handle modifier-only shortcuts, so that they don't trigger
+    // on Mod+Click, or Mod+Key; release Key; release Mod
+    // We also handle the events here, instead of in the nativeEventFilter
     m_display = XOpenDisplay(nullptr);
     auto connection = xcb_connect(XDisplayString((Display *)m_display), nullptr);
     auto context = xcb_generate_id(connection);
     xcb_record_range_t range;
     memset(&range, 0, sizeof(range));
-    range.device_events.first = XCB_KEY_RELEASE;
-    range.device_events.last = XCB_KEY_RELEASE;
+    range.device_events.first = XCB_KEY_PRESS;
+    range.device_events.last = XCB_BUTTON_PRESS;
     xcb_record_client_spec_t cs = XCB_RECORD_CS_ALL_CLIENTS;
     xcb_record_create_context(connection, context, 0, 1, 1, &cs, &range);
     auto cookie = xcb_record_enable_context(connection, context);
@@ -113,9 +113,21 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
             xcb_key_press_event_t *events = reinterpret_cast<xcb_key_press_event_t *>(xcb_record_enable_context_data(reply));
             int nEvents = xcb_record_enable_context_data_length(reply) / sizeof(xcb_key_press_event_t);
             for (xcb_key_press_event_t *e = events; e < events + nEvents; e++) {
-                Q_ASSERT(e->response_type == XCB_KEY_RELEASE);
                 qCDebug(KGLOBALACCELD) << "Got XKeyRelease event";
-                x11KeyRelease(e);
+                switch (e->response_type) {
+                case XCB_KEY_PRESS:
+                    x11KeyPress(e);
+                    break;
+                case XCB_KEY_RELEASE:
+                    x11KeyRelease(e);
+                    break;
+                case XCB_BUTTON_PRESS:
+                    x11ButtonPress(e);
+                    break;
+                default:
+                    // Impossible
+                    break;
+                }
             }
         }
     });
@@ -134,6 +146,17 @@ KGlobalAccelImpl::~KGlobalAccelImpl()
 
 bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
 {
+    // don't grab modifier only keys
+    switch (keyQt & ~Qt::KeyboardModifierMask) {
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Alt:
+    case Qt::Key_Meta:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case 0:
+        return false;
+    }
     // grabKey is called during shutdown
     // shutdown might be due to the X server being killed
     // if so, fail immediately before trying to make other xcb calls
@@ -275,7 +298,7 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
         return false;
     } else if (responseType == XCB_KEY_PRESS) {
         qCDebug(KGLOBALACCELD) << "Got XKeyPress event";
-        return x11KeyPress(reinterpret_cast<xcb_key_press_event_t *>(event));
+        return false;
     } else if (m_xkb_first_event && responseType == m_xkb_first_event) {
         const uint8_t xkbEvent = event->pad0;
         switch (xkbEvent) {
@@ -368,6 +391,13 @@ bool KGlobalAccelImpl::x11KeyRelease(xcb_key_press_event_t *pEvent)
         return false;
     }
     return keyReleased(keyQt);
+}
+
+bool KGlobalAccelImpl::x11ButtonPress(xcb_key_press_event_t *event)
+{
+    Q_UNUSED(event);
+    // TODO: get buttons, and differentiate between pointer and axis events
+    return pointerPressed(Qt::NoButton);
 }
 
 void KGlobalAccelImpl::setEnabled(bool enable)
