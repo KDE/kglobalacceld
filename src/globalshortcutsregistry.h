@@ -157,6 +157,8 @@ private:
     // returns true if the key was handled
     bool keyPressed(int keyQt);
     bool keyReleased(int keyQt);
+    bool pointerPressed(Qt::MouseButtons pointerButtons);
+    bool axisTriggered(int axis);
 
     bool processKey(int keyQt);
 

@@ -51,3 +51,13 @@ bool KGlobalAccelInterface::keyReleased(int keyQt)
 {
     return d->owner->keyReleased(keyQt);
 }
+
+bool KGlobalAccelInterface::pointerPressed(Qt::MouseButtons buttons)
+{
+    return d->owner->pointerPressed(buttons);
+}
+
+bool KGlobalAccelInterface::axisTriggered(int axis)
+{
+    return d->owner->axisTriggered(axis);
+}
