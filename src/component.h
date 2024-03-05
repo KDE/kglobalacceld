@@ -13,6 +13,7 @@
 #include "kconfiggroup.h"
 
 #include <KGlobalAccel>
+#include <QDBusContext>
 #include <QHash>
 #include <QObject>
 
@@ -20,10 +21,14 @@ class GlobalShortcut;
 class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
 
+struct useOldKglobalShortcutInfoMarshalling {
+    KGlobalShortcutInfo info;
+};
+
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
  */
-class Component : public QObject
+class Component : public QObject, public QDBusContext
 {
     Q_OBJECT
 
@@ -149,7 +154,8 @@ public Q_SLOTS:
     Q_SCRIPTABLE QStringList shortcutNames(const QString &context = QStringLiteral("default")) const;
 
     //! Returns all shortcut in @a context
-    Q_SCRIPTABLE QList<KGlobalShortcutInfo> allShortcutInfos(const QString &context = QStringLiteral("default")) const;
+    Q_SCRIPTABLE QList<useOldKglobalShortcutInfoMarshalling> allShortcutInfos(const QString &context = QStringLiteral("default")) const;
+    Q_SCRIPTABLE QList<KGlobalShortcutInfo> allShortcutInfos2(const QString &context = QStringLiteral("default")) const;
 
     //! Returns the shortcut contexts available for the component.
     Q_SCRIPTABLE QStringList getShortcutContexts() const;

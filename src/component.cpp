@@ -12,12 +12,51 @@
 #include "logging_p.h"
 #include <config-kglobalaccel.h>
 
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusMetaType>
 #include <QKeySequence>
 #include <QStringList>
 
 #if HAVE_X11
 #include <private/qtx11extras_p.h>
 #endif
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, useOldKglobalShortcutInfoMarshalling &sequence)
+{
+    // dummy;
+    return argument;
+}
+QDBusArgument &operator<<(QDBusArgument &argument, const useOldKglobalShortcutInfoMarshalling &info)
+{
+    qDebug() << "using old marshalling";
+    auto shortcut = info.info;
+    argument.beginStructure();
+    /* clang-format off */
+    argument << shortcut.uniqueName()
+             << shortcut.friendlyName()
+             << shortcut.componentUniqueName()
+             << shortcut.componentFriendlyName()
+             << shortcut.contextUniqueName()
+             << shortcut.contextFriendlyName();
+    /* clang-format on */
+    argument.beginArray(qMetaTypeId<int>());
+
+    const QList<QKeySequence> keys = shortcut.keys();
+    for (const QKeySequence &key : keys) {
+        argument << key[0].toCombined();
+    }
+    argument.endArray();
+    argument.beginArray(qMetaTypeId<int>());
+
+    const QList<QKeySequence> defaultKeys = shortcut.defaultKeys();
+    for (const QKeySequence &key : defaultKeys) {
+        argument << key[0].toCombined();
+    }
+    argument.endArray();
+    argument.endStructure();
+    return argument;
+}
 
 QList<QKeySequence> Component::keysFromString(const QString &str)
 {
@@ -56,7 +95,8 @@ Component::Component(const QString &uniqueName, const QString &friendlyName)
 {
     // Make sure we do no get uniquenames still containing the context
     Q_ASSERT(uniqueName.indexOf(QLatin1Char('|')) == -1);
-
+    qDBusRegisterMetaType<useOldKglobalShortcutInfoMarshalling>();
+    qDBusRegisterMetaType<QList<useOldKglobalShortcutInfoMarshalling>>();
     const QString DEFAULT(QStringLiteral("default"));
     createGlobalShortcutContext(DEFAULT, QStringLiteral("Default Context"));
     _current = _contexts.value(DEFAULT);
@@ -97,7 +137,14 @@ QList<GlobalShortcut *> Component::allShortcuts(const QString &contextName) cons
     return context ? context->_actionsMap.values() : QList<GlobalShortcut *>{};
 }
 
-QList<KGlobalShortcutInfo> Component::allShortcutInfos(const QString &contextName) const
+QList<useOldKglobalShortcutInfoMarshalling> Component::allShortcutInfos(const QString &contextName) const
+{
+    GlobalShortcutContext *context = _contexts.value(contextName);
+    auto infos = context ? context->allShortcutInfos() : QList<KGlobalShortcutInfo>{};
+    QList<useOldKglobalShortcutInfoMarshalling> useOldMarshalling(infos.begin(), infos.end());
+    return useOldMarshalling;
+}
+QList<KGlobalShortcutInfo> Component::allShortcutInfos2(const QString &contextName) const
 {
     GlobalShortcutContext *context = _contexts.value(contextName);
     return context ? context->allShortcutInfos() : QList<KGlobalShortcutInfo>{};
