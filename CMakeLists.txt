@@ -33,20 +33,10 @@ include(ECMDeprecationSettings)
 include(KDEClangFormat)
 include(ECMAddTests)
 
-# When kglobalacceld was still in frameworks/kglobalaccel and KF5-time deprecated API was dropped there,
-# some deprecated stuff in kglobalacceld was kept: "needs more consideration since it might break older consumers"
-# Early build setups for Qt6/KF6-based software externally set EXCLUDE_DEPRECATED_BEFORE_AND_AT to 5.99,
-# and accidentally for any repos, not just KF modules, so also with other version schemes.
-# Also should defaults be set by the software itself.
-# While the deprecated stuff is still around and waiting for being sorted out, set ourselves the
-# expected czrrent default value for EXCLUDE_DEPRECATED_BEFORE_AND_AT, to achieve consistent builds (and set of available API).
-# Note the deprecated API also still uses the KF version scheme, which works for now while no additional API is deprecated.
-# TODO: sort out where KF5-time deprecated API still is needed and undeprecate it, remove the rest, then return to using 0 here
-if (TRUE)
-set(EXCLUDE_DEPRECATED_BEFORE_AND_AT 5.99.0 CACHE STRING "Control the range of deprecated API excluded from the build [default=5.99.0].")
-else() # normal
+# KGlobalAccelD contains functions that are marked as deprecated.
+# These are part of the public DBus API and are used by older applications
+# Therefore we must not exclude those by default
 set(EXCLUDE_DEPRECATED_BEFORE_AND_AT 0 CACHE STRING "Control the range of deprecated API excluded from the build [default=0].")
-endif()
 
 find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED DBus Gui Widgets)
 
