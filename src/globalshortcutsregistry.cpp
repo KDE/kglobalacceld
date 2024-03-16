@@ -669,7 +669,14 @@ void GlobalShortcutsRegistry::loadSettings()
     }
 
     auto appsWithShortcuts = KApplicationTrader::query([](const KService::Ptr &service) {
-        return !service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).isEmpty();
+        if (!service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).isEmpty()) {
+            return true;
+        }
+
+        const auto actions = service->actions();
+        return std::any_of(actions.cbegin(), actions.cend(), [](const KServiceAction &action) {
+            return !action.property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).isEmpty();
+        });
     });
 
     for (auto service : appsWithShortcuts) {
