@@ -16,11 +16,12 @@
 #include "sequencehelpers_p.h"
 #include <config-kglobalaccel.h>
 
+#include <KApplicationTrader>
 #include <KDesktopFile>
 #include <KFileUtils>
 #include <KPluginMetaData>
+#include <KSycoca>
 
-#include <KApplicationTrader>
 #include <QDBusConnection>
 #include <QDir>
 #include <QGuiApplication>
@@ -257,6 +258,8 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     if (_manager) {
         _manager->setEnabled(true);
     }
+
+    connect(KSycoca::self(), &KSycoca::databaseChanged, this, &GlobalShortcutsRegistry::refreshServices);
 }
 
 GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
@@ -730,6 +733,11 @@ void GlobalShortcutsRegistry::loadSettings()
         actionComp->loadFromService();
     }
 
+    detectAppsWithShortcuts();
+}
+
+void GlobalShortcutsRegistry::detectAppsWithShortcuts()
+{
     auto appsWithShortcuts = KApplicationTrader::query([](const KService::Ptr &service) {
         if (!service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).isEmpty()) {
             return true;
@@ -744,6 +752,7 @@ void GlobalShortcutsRegistry::loadSettings()
     for (auto service : appsWithShortcuts) {
         auto it = findByName(service->storageId());
         if (it != m_components.cend()) {
+            // already there
             continue;
         }
 
@@ -878,6 +887,35 @@ void GlobalShortcutsRegistry::writeSettings()
 
     m_components.erase(it, m_components.end());
     _config.sync();
+}
+
+void GlobalShortcutsRegistry::refreshServices()
+{
+    // Remove shortcuts for no longer existing apps
+    auto it = std::remove_if(m_components.begin(), m_components.end(), [](const ComponentPtr &component) {
+        bool isService = component->uniqueName().endsWith(QLatin1String(".desktop"));
+
+        if (!isService) {
+            return false;
+        }
+
+        if (KService::serviceByStorageId(component->uniqueName())) {
+            // still there
+            return false;
+        }
+
+        if (!QStandardPaths::locate(QStandardPaths::GenericDataLocation, QLatin1String("kglobalaccel/") + component->uniqueName()).isEmpty()) {
+            // still there
+            return false;
+        }
+
+        return true;
+    });
+
+    m_components.erase(it, m_components.end());
+
+    // Look for new apps with shortcuts
+    detectAppsWithShortcuts();
 }
 
 #include "moc_globalshortcutsregistry.cpp"

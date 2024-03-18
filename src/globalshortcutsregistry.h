@@ -147,6 +147,8 @@ private:
     KServiceActionComponent *createServiceActionComponent(KService::Ptr service);
     void migrateConfig();
     void migrateKHotkeys();
+    void refreshServices();
+    void detectAppsWithShortcuts();
 
     static void unregisterComponent(Component *component);
     using ComponentPtr = std::unique_ptr<Component, decltype(&unregisterComponent)>;
