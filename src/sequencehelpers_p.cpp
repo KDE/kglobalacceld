@@ -119,7 +119,7 @@ static int normalizeKey(int keyQt)
     }
 }
 
-QKeySequence mangleKey(const QKeySequence &key)
+QKeySequence normalizeSequence(const QKeySequence &key)
 {
     // Qt triggers both shortcuts that include Shift+Backtab and Shift+Tab
     // when user presses Shift+Tab. Make no difference here.

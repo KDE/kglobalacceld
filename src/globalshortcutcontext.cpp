@@ -59,11 +59,11 @@ GlobalShortcut *GlobalShortcutContext::getShortcutByKey(const QKeySequence &key,
     if (key.isEmpty()) {
         return nullptr;
     }
-    QKeySequence keyMangled = Utils::mangleKey(key);
+    QKeySequence keyMangled = Utils::normalizeSequence(key);
     for (GlobalShortcut *sc : std::as_const(_actionsMap)) {
         const auto keys = sc->keys();
         for (const QKeySequence &other : keys) {
-            QKeySequence otherMangled = Utils::mangleKey(other);
+            QKeySequence otherMangled = Utils::normalizeSequence(other);
             switch (type) {
             case KGlobalAccel::MatchType::Equal:
                 if (otherMangled == keyMangled) {
