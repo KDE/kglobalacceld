@@ -152,7 +152,7 @@ void GlobalShortcutsRegistry::migrateKHotkeys()
         file.desktopGroup().writeEntry("X-KDE-GlobalAccel-CommandShortcut", true);
         file.desktopGroup().writeEntry("StartupNotify", false);
 
-        _config.group(QStringLiteral("services")).group(uuid + QLatin1String(".desktop")).writeEntry("_launch", kglobalaccelEntry);
+        _config.group(QStringLiteral("services")).group(uuid + QLatin1String(".desktop")).writeEntry("_launch", key);
         _config.group(QStringLiteral("khotkeys")).revertToDefault(uuid);
     }
 }
