@@ -18,6 +18,7 @@
 #include <QHash>
 #include <QKeySequence>
 #include <QObject>
+#include <QTimer>
 
 #include "kglobalaccel_export.h"
 
@@ -145,6 +146,7 @@ private:
     KServiceActionComponent *createServiceActionComponent(KService::Ptr service);
     void migrateConfig();
     void migrateKHotkeys();
+    void scheduleRefreshServices();
     void refreshServices();
     void detectAppsWithShortcuts();
 
@@ -177,6 +179,7 @@ private:
 
     QDBusObjectPath _dbusPath;
     GlobalShortcut *m_lastShortcut = nullptr;
+    QTimer m_refreshServicesTimer;
 };
 
 #endif /* #ifndef GLOBALSHORTCUTSREGISTRY_H */
