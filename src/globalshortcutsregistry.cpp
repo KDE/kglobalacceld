@@ -259,7 +259,13 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
         _manager->setEnabled(true);
     }
 
-    connect(KSycoca::self(), &KSycoca::databaseChanged, this, &GlobalShortcutsRegistry::refreshServices);
+    // ksycoca database can change while refreshServices() prunes orphan shortcuts. If that happens,
+    // call refreshServices() as a followup in the next event loop cycle.
+    connect(KSycoca::self(), &KSycoca::databaseChanged, this, &GlobalShortcutsRegistry::scheduleRefreshServices);
+
+    m_refreshServicesTimer.setSingleShot(true);
+    m_refreshServicesTimer.setInterval(0);
+    connect(&m_refreshServicesTimer, &QTimer::timeout, this, &GlobalShortcutsRegistry::refreshServices);
 }
 
 GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
@@ -887,6 +893,11 @@ void GlobalShortcutsRegistry::writeSettings()
 
     m_components.erase(it, m_components.end());
     _config.sync();
+}
+
+void GlobalShortcutsRegistry::scheduleRefreshServices()
+{
+    m_refreshServicesTimer.start();
 }
 
 void GlobalShortcutsRegistry::refreshServices()
