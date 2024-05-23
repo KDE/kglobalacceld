@@ -437,6 +437,11 @@ bool GlobalShortcutsRegistry::keyPressed(int keyQt)
 
 bool GlobalShortcutsRegistry::processKey(int keyQt)
 {
+    if (!keyQt) {
+        _active_sequence = QKeySequence();
+        return false;
+    }
+
     int keys[maxSequenceLength] = {0, 0, 0, 0};
     int count = _active_sequence.count();
     if (count == maxSequenceLength) {
