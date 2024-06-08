@@ -16,6 +16,8 @@
 struct xcb_key_press_event_t;
 typedef xcb_key_press_event_t xcb_key_release_event_t;
 typedef struct _XCBKeySymbols xcb_key_symbols_t;
+class QTimer;
+
 /**
  * @internal
  *
@@ -53,6 +55,8 @@ public:
     bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
 
 private:
+    void scheduleX11MappingNotify();
+    void x11MappingNotify();
     /**
      * Filters X11 events ev for key bindings in the accelerator dictionary.
      * If a match is found the activated activated is emitted and the function
@@ -60,7 +64,6 @@ private:
      *
      * This is public for compatibility only. You do not need to call it.
      */
-    void x11MappingNotify();
     bool x11KeyPress(xcb_key_press_event_t *event);
     bool x11KeyRelease(xcb_key_press_event_t *event);
     bool x11ButtonPress(xcb_key_press_event_t *event);
@@ -69,6 +72,7 @@ private:
     uint8_t m_xkb_first_event;
     void *m_display;
     unsigned int m_xrecordCookieSequence;
+    QTimer *m_remapTimer;
 };
 
 #endif // _KGLOBALACCEL_X11_H

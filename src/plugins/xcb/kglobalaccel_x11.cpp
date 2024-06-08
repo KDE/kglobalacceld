@@ -16,6 +16,7 @@
 #include <QSocketNotifier>
 
 #include <QApplication>
+#include <QTimer>
 #include <QWidget>
 #include <private/qtx11extras_p.h>
 
@@ -134,6 +135,10 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
     m_notifier->setEnabled(true);
 
     calculateGrabMasks();
+
+    m_remapTimer = new QTimer(this);
+    m_remapTimer->setSingleShot(true);
+    connect(m_remapTimer, &QTimer::timeout, this, &KGlobalAccelImpl::x11MappingNotify);
 }
 
 KGlobalAccelImpl::~KGlobalAccelImpl()
@@ -292,7 +297,8 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
     xcb_generic_event_t *event = reinterpret_cast<xcb_generic_event_t *>(message);
     const uint8_t responseType = event->response_type & ~0x80;
     if (responseType == XCB_MAPPING_NOTIFY) {
-        x11MappingNotify();
+        qCDebug(KGLOBALACCELD) << "Got XCB_MAPPING_NOTIFY event";
+        scheduleX11MappingNotify();
 
         // Make sure to let Qt handle it as well
         return false;
@@ -303,12 +309,14 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
         const uint8_t xkbEvent = event->pad0;
         switch (xkbEvent) {
         case XCB_XKB_MAP_NOTIFY:
-            x11MappingNotify();
+            qCDebug(KGLOBALACCELD) << "Got XCB_XKB_MAP_NOTIFY event";
+            scheduleX11MappingNotify();
             break;
         case XCB_XKB_NEW_KEYBOARD_NOTIFY: {
             const xcb_xkb_new_keyboard_notify_event_t *ev = reinterpret_cast<xcb_xkb_new_keyboard_notify_event_t *>(event);
             if (ev->changed & XCB_XKB_NKN_DETAIL_KEYCODES) {
-                x11MappingNotify();
+                qCDebug(KGLOBALACCELD) << "Got XCB_XKB_NEW_KEYBOARD_NOTIFY event with XCB_XKB_NKN_DETAIL_KEYCODES";
+                scheduleX11MappingNotify();
             }
             break;
         }
@@ -324,10 +332,22 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
     }
 }
 
+void KGlobalAccelImpl::scheduleX11MappingNotify()
+{
+    // Prevent high CPU usage due to mass key remappings.
+    // x11MappingNotify() is fairly expensive, and in case the user modifies the whole keyboard using
+    // xmodmap, which apparently happens key by key, kglobalacceld used to spend over one minute in
+    // x11MappingNotify(). This bundling of changes reduces time spent to a few seconds and shouldn't
+    // delay application of changes enough to be noticeable - in fact, kglobalacceld will be done much
+    // more quickly, effectively *reducing* latency.
+    if (!m_remapTimer->isActive()) {
+        m_remapTimer->start(20);
+    }
+}
+
 void KGlobalAccelImpl::x11MappingNotify()
 {
-    qCDebug(KGLOBALACCELD) << "Got XMappingNotify event";
-
+    qCDebug(KGLOBALACCELD) << "Re-mapping keys";
     // Maybe the X modifier map has been changed.
     // uint oldKeyModMaskXAccel = g_keyModMaskXAccel;
     // uint oldKeyModMaskXOnOrOff = g_keyModMaskXOnOrOff;
