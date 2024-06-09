@@ -294,17 +294,16 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
     if (eventType != "xcb_generic_event_t") {
         return false;
     }
+
     xcb_generic_event_t *event = reinterpret_cast<xcb_generic_event_t *>(message);
     const uint8_t responseType = event->response_type & ~0x80;
     if (responseType == XCB_MAPPING_NOTIFY) {
         qCDebug(KGLOBALACCELD) << "Got XCB_MAPPING_NOTIFY event";
         scheduleX11MappingNotify();
 
-        // Make sure to let Qt handle it as well
-        return false;
     } else if (responseType == XCB_KEY_PRESS) {
         qCDebug(KGLOBALACCELD) << "Got XKeyPress event";
-        return false;
+
     } else if (m_xkb_first_event && responseType == m_xkb_first_event) {
         const uint8_t xkbEvent = event->pad0;
         switch (xkbEvent) {
@@ -323,13 +322,11 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
         default:
             break;
         }
-
-        // Make sure to let Qt handle it as well
-        return false;
-    } else {
-        // We get all XEvents. Just ignore them.
-        return false;
     }
+    // else... we get all xcb_generic_event_t. Just ignore the ones we don't care about.
+
+    // Make sure to let Qt handle the event as well
+    return false;
 }
 
 void KGlobalAccelImpl::scheduleX11MappingNotify()
