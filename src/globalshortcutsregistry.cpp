@@ -419,6 +419,11 @@ bool GlobalShortcutsRegistry::keyPressed(int keyQt)
     const int key = keyQt & ~Qt::KeyboardModifierMask;
     const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
     switch (key) {
+    case 0:
+        // Invalid key code
+        m_state = Normal;
+        processKey(0); // Reset the active sequence
+        return false;
     case Qt::Key_Shift:
     case Qt::Key_Control:
     case Qt::Key_Alt:
@@ -521,6 +526,10 @@ bool GlobalShortcutsRegistry::keyReleased(int keyQt)
     const int key = keyQt & ~Qt::KeyboardModifierMask;
     const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
     switch (key) {
+    case 0:
+        // Invalid key code
+        m_state = Normal;
+        break;
     case Qt::Key_Super_L:
     case Qt::Key_Super_R:
     case Qt::Key_Meta:
