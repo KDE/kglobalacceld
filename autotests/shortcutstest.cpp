@@ -122,6 +122,9 @@ void ShortcutsTest::testShortcuts_data()
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::Wheel, 0)
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << false;
+    QTest::newRow("mod+invalid does not trigger modifier-only single mod")
+        << QKeySequence(Qt::ControlModifier)
+        << (Events() << std::make_pair(QEvent::KeyPress, Qt::ControlModifier) << std::make_pair(QEvent::KeyRelease, Qt::ControlModifier)) << false;
 }
 
 void ShortcutsTest::testShortcuts()
