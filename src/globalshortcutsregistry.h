@@ -192,6 +192,7 @@ private:
     QDBusObjectPath _dbusPath;
     GlobalShortcut *m_lastShortcut = nullptr;
     QTimer m_refreshServicesTimer;
+    QList<QString> m_deletedServices;
 };
 
 #endif /* #ifndef GLOBALSHORTCUTSREGISTRY_H */

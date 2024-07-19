@@ -29,6 +29,10 @@
 #include <QPluginLoader>
 #include <QStandardPaths>
 
+using namespace Qt::StringLiterals;
+
+static constexpr auto KEY_DELETED = "_k_deleted"_L1;
+
 static bool checkPlatform(const QJsonObject &metadata, const QString &platformName)
 {
     const QJsonArray platforms = metadata.value(QStringLiteral("MetaData")).toObject().value(QStringLiteral("platforms")).toArray();
@@ -684,6 +688,11 @@ void GlobalShortcutsRegistry::loadSettings()
         Q_ASSERT(!getComponent(groupName));
 
         KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(groupName);
+        if (configGroup.readEntry(KEY_DELETED, false)) {
+            qCDebug(KGLOBALACCELD) << "Group marked deleted " << groupName;
+            m_deletedServices.append(groupName);
+            continue;
+        }
 
         Component *component = createServiceActionComponent(groupName);
 
@@ -721,6 +730,11 @@ void GlobalShortcutsRegistry::loadSettings()
 
     for (const QString &file : desktopFiles) {
         const QString fileName = QFileInfo(file).fileName();
+
+        if (m_deletedServices.contains(fileName)) {
+            continue;
+        }
+
         auto it = findByName(fileName);
         if (it != m_components.cend()) {
             continue;
@@ -753,6 +767,10 @@ void GlobalShortcutsRegistry::detectAppsWithShortcuts()
     });
 
     for (auto service : appsWithShortcuts) {
+        if (m_deletedServices.contains(service->storageId())) {
+            continue;
+        }
+
         auto it = findByName(service->storageId());
         if (it != m_components.cend()) {
             // already there
@@ -881,6 +899,7 @@ void GlobalShortcutsRegistry::writeSettings()
 
         if (component->allShortcuts().isEmpty()) {
             configGroup.deleteGroup();
+            configGroup.writeEntry(KEY_DELETED, true);
             return true;
         } else {
             component->writeSettings(configGroup);
