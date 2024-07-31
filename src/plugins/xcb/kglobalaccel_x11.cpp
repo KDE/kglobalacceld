@@ -117,7 +117,28 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                 qCDebug(KGLOBALACCELD) << "Got XKeyRelease event";
                 switch (e->response_type) {
                 case XCB_KEY_PRESS:
-                    x11KeyPress(e);
+                    // only handle modifier keys here, so as not to trigger when
+                    // event is grabbed by other clients; handle normal keys in
+                    // nativeEventFilter
+                    int keyQt;
+                    if (!KKeyServer::xcbKeyPressEventToQt(e, &keyQt)) {
+                        qCWarning(KGLOBALACCELD) << "KKeyServer::xcbKeyPressEventToQt failed";
+                        break;
+                    }
+                    switch (keyQt) {
+                    case Qt::Key_Shift:
+                    case Qt::Key_Control:
+                    case Qt::Key_Alt:
+                    case Qt::Key_Super_L:
+                    case Qt::Key_Super_R:
+                    case Qt::Key_Meta:
+                        x11KeyPress(e);
+                        break;
+                    default:
+                        // even though we don't handle the key, we need to update the state machine
+                        resetModifierOnlyState();
+                        break;
+                    }
                     break;
                 case XCB_KEY_RELEASE:
                     x11KeyRelease(e);
@@ -303,7 +324,7 @@ bool KGlobalAccelImpl::nativeEventFilter(const QByteArray &eventType, void *mess
 
     } else if (responseType == XCB_KEY_PRESS) {
         qCDebug(KGLOBALACCELD) << "Got XKeyPress event";
-
+        return x11KeyPress(reinterpret_cast<xcb_key_press_event_t *>(event));
     } else if (m_xkb_first_event && responseType == m_xkb_first_event) {
         const uint8_t xkbEvent = event->pad0;
         switch (xkbEvent) {

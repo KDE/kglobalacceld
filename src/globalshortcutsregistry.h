@@ -175,6 +175,10 @@ private:
     // PressingModifierOnly -> Normal when any modifier key is released; and emit the shortcut
     // PressingModifierOnly -> Normal when a non-modifier key is pressed
     enum { Normal, PressingModifierOnly } m_state = Normal;
+    void resetModifierOnlyState()
+    {
+        m_state = Normal;
+    }
 
     using ComponentVec = std::vector<ComponentPtr>;
     ComponentVec m_components;

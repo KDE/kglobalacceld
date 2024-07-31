@@ -84,6 +84,12 @@ protected:
      * @returns @c true if the key was handled
      */
     bool axisTriggered(int axis);
+    /**
+     * Called by the implementation to inform us about that the modifier-only state should be reset.
+     * Used when we don't want to actually handle the event, but still want to reset the state.
+     *
+     */
+    void resetModifierOnlyState();
 
     class Private;
     QScopedPointer<Private> d;

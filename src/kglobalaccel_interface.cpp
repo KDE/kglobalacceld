@@ -61,3 +61,8 @@ bool KGlobalAccelInterface::axisTriggered(int axis)
 {
     return d->owner->axisTriggered(axis);
 }
+
+void KGlobalAccelInterface::resetModifierOnlyState()
+{
+    d->owner->resetModifierOnlyState();
+}
