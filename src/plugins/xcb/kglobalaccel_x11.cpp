@@ -125,7 +125,7 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                         qCWarning(KGLOBALACCELD) << "KKeyServer::xcbKeyPressEventToQt failed";
                         break;
                     }
-                    switch (keyQt) {
+                    switch (keyQt & ~Qt::KeyboardModifierMask) {
                     case Qt::Key_Shift:
                     case Qt::Key_Control:
                     case Qt::Key_Alt:
