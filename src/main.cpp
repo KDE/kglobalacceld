@@ -48,6 +48,8 @@ int main(int argc, char **argv)
 
     KAboutData::setApplicationData(aboutdata);
 
+    KCrash::initialize();
+
     {
         QCommandLineParser parser;
         aboutdata.setupCommandLine(&parser);
