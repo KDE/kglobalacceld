@@ -74,6 +74,7 @@ private:
     void *m_display;
     unsigned int m_xrecordCookieSequence;
     QTimer *m_remapTimer;
+    bool m_keyboardGrabbed = false;
 };
 
 #endif // _KGLOBALACCEL_X11_H

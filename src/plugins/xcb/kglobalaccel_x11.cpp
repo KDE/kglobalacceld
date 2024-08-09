@@ -78,6 +78,8 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
     memset(&range, 0, sizeof(range));
     range.device_events.first = XCB_KEY_PRESS;
     range.device_events.last = XCB_BUTTON_PRESS;
+    range.core_requests.first = XCB_GRAB_KEYBOARD;
+    range.core_requests.last = XCB_UNGRAB_KEYBOARD;
     xcb_record_client_spec_t cs = XCB_RECORD_CS_ALL_CLIENTS;
     xcb_record_create_context(connection, context, 0, 1, 1, &cs, &range);
     auto cookie = xcb_record_enable_context(connection, context);
@@ -122,6 +124,9 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                     // nativeEventFilter
                     xcb_key_press_event_t *keyPressEvent = reinterpret_cast<xcb_key_press_event_t *>(events);
                     events += sizeof(xcb_key_press_event_t);
+                    if (m_keyboardGrabbed) {
+                        break;
+                    }
                     int keyQt;
                     if (!KKeyServer::xcbKeyPressEventToQt(keyPressEvent, &keyQt)) {
                         qCWarning(KGLOBALACCELD) << "KKeyServer::xcbKeyPressEventToQt failed";
@@ -145,6 +150,9 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                 case XCB_KEY_RELEASE: {
                     xcb_key_press_event_t *keyReleaseEvent = reinterpret_cast<xcb_key_press_event_t *>(events);
                     events += sizeof(xcb_key_release_event_t);
+                    if (m_keyboardGrabbed) {
+                        break;
+                    }
                     x11KeyRelease(keyReleaseEvent);
                 } break;
                 case XCB_BUTTON_PRESS: {
@@ -152,6 +160,14 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                     x11ButtonPress(buttonPressEvent);
                     events += sizeof(xcb_button_press_event_t);
                 } break;
+                case XCB_UNGRAB_KEYBOARD:
+                    m_keyboardGrabbed = false;
+                    events += sizeof(xcb_ungrab_keyboard_request_t);
+                    break;
+                case XCB_GRAB_KEYBOARD:
+                    m_keyboardGrabbed = true;
+                    events += sizeof(xcb_grab_keyboard_request_t);
+                    break;
                 default:
                     // Impossible
                     Q_UNREACHABLE();
