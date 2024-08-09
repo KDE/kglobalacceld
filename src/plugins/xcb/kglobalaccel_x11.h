@@ -15,6 +15,7 @@
 
 struct xcb_key_press_event_t;
 typedef xcb_key_press_event_t xcb_key_release_event_t;
+struct xcb_button_press_event_t;
 typedef struct _XCBKeySymbols xcb_key_symbols_t;
 class QTimer;
 
@@ -65,8 +66,8 @@ private:
      * This is public for compatibility only. You do not need to call it.
      */
     bool x11KeyPress(xcb_key_press_event_t *event);
-    bool x11KeyRelease(xcb_key_press_event_t *event);
-    bool x11ButtonPress(xcb_key_press_event_t *event);
+    bool x11KeyRelease(xcb_key_release_event_t *event);
+    bool x11ButtonPress(xcb_button_press_event_t *event);
 
     xcb_key_symbols_t *m_keySymbols;
     uint8_t m_xkb_first_event;

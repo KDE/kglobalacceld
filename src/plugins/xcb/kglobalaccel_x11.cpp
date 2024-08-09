@@ -111,17 +111,19 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
             }
 
             QScopedPointer<xcb_record_enable_context_reply_t, QScopedPointerPodDeleter> data(reinterpret_cast<xcb_record_enable_context_reply_t *>(reply));
-            xcb_key_press_event_t *events = reinterpret_cast<xcb_key_press_event_t *>(xcb_record_enable_context_data(reply));
-            int nEvents = xcb_record_enable_context_data_length(reply) / sizeof(xcb_key_press_event_t);
-            for (xcb_key_press_event_t *e = events; e < events + nEvents; e++) {
+            uint8_t *events = xcb_record_enable_context_data(reply);
+            uint8_t *const eventsEnd = events + xcb_record_enable_context_data_length(reply);
+            while (events < eventsEnd) {
                 qCDebug(KGLOBALACCELD) << "Got XKeyRelease event";
-                switch (e->response_type) {
-                case XCB_KEY_PRESS:
+                switch (*events) {
+                case XCB_KEY_PRESS: {
                     // only handle modifier keys here, so as not to trigger when
                     // event is grabbed by other clients; handle normal keys in
                     // nativeEventFilter
+                    xcb_key_press_event_t *keyPressEvent = reinterpret_cast<xcb_key_press_event_t *>(events);
+                    events += sizeof(xcb_key_press_event_t);
                     int keyQt;
-                    if (!KKeyServer::xcbKeyPressEventToQt(e, &keyQt)) {
+                    if (!KKeyServer::xcbKeyPressEventToQt(keyPressEvent, &keyQt)) {
                         qCWarning(KGLOBALACCELD) << "KKeyServer::xcbKeyPressEventToQt failed";
                         break;
                     }
@@ -132,22 +134,29 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
                     case Qt::Key_Super_L:
                     case Qt::Key_Super_R:
                     case Qt::Key_Meta:
-                        x11KeyPress(e);
+                        x11KeyPress(keyPressEvent);
                         break;
                     default:
                         // even though we don't handle the key, we need to update the state machine
                         resetModifierOnlyState();
                         break;
                     }
-                    break;
-                case XCB_KEY_RELEASE:
-                    x11KeyRelease(e);
-                    break;
-                case XCB_BUTTON_PRESS:
-                    x11ButtonPress(e);
-                    break;
+                } break;
+                case XCB_KEY_RELEASE: {
+                    xcb_key_press_event_t *keyReleaseEvent = reinterpret_cast<xcb_key_press_event_t *>(events);
+                    events += sizeof(xcb_key_release_event_t);
+                    x11KeyRelease(keyReleaseEvent);
+                } break;
+                case XCB_BUTTON_PRESS: {
+                    xcb_button_press_event_t *buttonPressEvent = reinterpret_cast<xcb_button_press_event_t *>(events);
+                    x11ButtonPress(buttonPressEvent);
+                    events += sizeof(xcb_button_press_event_t);
+                } break;
                 default:
                     // Impossible
+                    Q_UNREACHABLE();
+                    qCWarning(KGLOBALACCELD) << "Got unknown event type" << *events;
+                    events = eventsEnd; // exit the while loop
                     break;
                 }
             }
@@ -418,7 +427,7 @@ bool KGlobalAccelImpl::x11KeyPress(xcb_key_press_event_t *pEvent)
     return keyPressed(keyQt);
 }
 
-bool KGlobalAccelImpl::x11KeyRelease(xcb_key_press_event_t *pEvent)
+bool KGlobalAccelImpl::x11KeyRelease(xcb_key_release_event_t *pEvent)
 {
     if (QWidget::keyboardGrabber() || QApplication::activePopupWidget()) {
         qCWarning(KGLOBALACCELD) << "kglobalacceld should be popup and keyboard grabbing free!";
@@ -431,7 +440,7 @@ bool KGlobalAccelImpl::x11KeyRelease(xcb_key_press_event_t *pEvent)
     return keyReleased(keyQt);
 }
 
-bool KGlobalAccelImpl::x11ButtonPress(xcb_key_press_event_t *event)
+bool KGlobalAccelImpl::x11ButtonPress(xcb_button_press_event_t *event)
 {
     Q_UNUSED(event);
     // TODO: get buttons, and differentiate between pointer and axis events
