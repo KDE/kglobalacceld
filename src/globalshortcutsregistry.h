@@ -170,11 +170,17 @@ private:
     QKeySequence _active_sequence;
     QHash<int, int> _keys_count;
 
+    Qt::KeyboardModifiers m_currentModifiers;
     // State machine:
     // Any -> PressingModifierOnly when a modifier is pressed
-    // PressingModifierOnly -> Normal when any modifier key is released; and emit the shortcut
-    // PressingModifierOnly -> Normal when a non-modifier key is pressed
-    enum { Normal, PressingModifierOnly } m_state = Normal;
+    // PressingModifierOnly -> ReleasingModifierOnly when modifier keys are released
+    // ReleasingModifierOnly -> Normal when other keys are pressed
+    // ReleasingModifierOnly -> Normal when all keys are released, and when a non-modifier key is pressed
+    // Modifier-only shortcuts are triggered in ReleasingModifierOnly state, if all keys are released
+    // and the time since the first release is less than some threshold
+    enum { Normal,
+           PressingModifierOnly,
+           ReleasingModifierOnly } m_state = Normal;
     void resetModifierOnlyState()
     {
         m_state = Normal;
