@@ -57,3 +57,5 @@ bool KGlobalAccelImpl::checkAxisTriggered(int axis)
 {
     return axisTriggered(axis);
 }
+
+#include "moc_dummy.cpp"

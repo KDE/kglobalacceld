@@ -471,3 +471,5 @@ void KGlobalAccelImpl::setEnabled(bool enable)
         qApp->removeNativeEventFilter(this);
     }
 }
+
+#include "moc_kglobalaccel_x11.cpp"

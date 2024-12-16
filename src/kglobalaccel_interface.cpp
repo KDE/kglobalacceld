@@ -66,3 +66,5 @@ void KGlobalAccelInterface::resetModifierOnlyState()
 {
     d->owner->resetModifierOnlyState();
 }
+
+#include "moc_kglobalaccel_interface.cpp"
