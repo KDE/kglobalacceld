@@ -211,7 +211,7 @@ void GlobalShortcutsRegistry::migrateConfig()
         KDesktopFile file(fileName);
         const QString componentName = QFileInfo(fileName).fileName();
 
-        auto migrateTo = [this, componentName](KConfigGroup &group, const QString &actionName) {
+        auto migrateTo = [this, componentName, fileName](KConfigGroup &group, const QString &actionName) {
             QString migrateFrom = group.readEntry<QString>(QStringLiteral("X-KDE-Migrate-Shortcut"), QString());
 
             if (migrateFrom.isEmpty()) {
@@ -219,6 +219,12 @@ void GlobalShortcutsRegistry::migrateConfig()
             }
 
             const QStringList migrateFromParts = migrateFrom.split(QLatin1Char(','));
+            if (migrateFromParts.size() != 2) {
+                qCWarning(KGLOBALACCELD, "Skipping X-KDE-Migrate-Shortcut in %s because it contains an invalid value: %s (expected a value with the format: old_component,old_action_name)",
+                          qPrintable(fileName),
+                          qPrintable(migrateFrom));
+                return;
+            }
 
             if (!_config.group(migrateFromParts[0]).hasKey(migrateFromParts[1])) {
                 // Probably already migrated
