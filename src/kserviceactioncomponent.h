@@ -27,7 +27,7 @@ public:
     void loadFromService();
     void emitGlobalShortcutPressed(const GlobalShortcut &shortcut) override;
     void writeSettings(KConfigGroup &config) const override;
-    void loadSettings(KConfigGroup &config) override;
+    void loadSettings(const KConfigGroup &config) override;
     bool cleanUp() override;
 
 private:

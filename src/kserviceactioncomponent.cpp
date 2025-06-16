@@ -151,7 +151,7 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config) const
     }
 }
 
-void KServiceActionComponent::loadSettings(KConfigGroup &configGroup)
+void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup)
 {
     // Action shortcuts
     const auto actions = m_service->actions();

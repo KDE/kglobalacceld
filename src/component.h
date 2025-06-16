@@ -85,7 +85,7 @@ public:
     bool isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const;
 
     //! Load the settings from config group @p config
-    virtual void loadSettings(KConfigGroup &config);
+    virtual void loadSettings(const KConfigGroup &config);
 
     //! Sets the human readable name for this component.
     void setFriendlyName(const QString &);

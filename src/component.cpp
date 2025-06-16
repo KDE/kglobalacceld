@@ -299,7 +299,7 @@ Component::registerShortcut(const QString &uniqueName, const QString &friendlyNa
     return shortcut;
 }
 
-void Component::loadSettings(KConfigGroup &configGroup)
+void Component::loadSettings(const KConfigGroup &configGroup)
 {
     // GlobalShortcutsRegistry::loadSettings handles contexts.
     const auto listKeys = configGroup.keyList();

@@ -675,7 +675,7 @@ void GlobalShortcutsRegistry::loadSettings()
         // beginning.
         Q_ASSERT(!getComponent(groupName));
 
-        KConfigGroup configGroup(&_config, groupName);
+        const KConfigGroup configGroup(&_config, groupName);
 
         const QString friendlyName = configGroup.readEntry("_k_friendly_name");
 
@@ -689,7 +689,7 @@ void GlobalShortcutsRegistry::loadSettings()
                 continue;
             }
 
-            KConfigGroup contextGroup(&configGroup, context);
+            const KConfigGroup contextGroup(&configGroup, context);
             QString contextFriendlyName = contextGroup.readEntry("_k_friendly_name");
             component->createGlobalShortcutContext(context, contextFriendlyName);
             component->activateGlobalShortcutContext(context);
@@ -711,7 +711,7 @@ void GlobalShortcutsRegistry::loadSettings()
         // beginning.
         Q_ASSERT(!getComponent(groupName));
 
-        KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(groupName);
+        const KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(groupName);
 
         Component *component = createServiceActionComponent(groupName);
 
@@ -773,7 +773,7 @@ void GlobalShortcutsRegistry::detectAppsWithShortcuts()
         auto *component = createServiceActionComponent(service);
         component->activateGlobalShortcutContext(QStringLiteral("default"));
 
-        if (KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(component->uniqueName()); configGroup.exists()) {
+        if (const KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(component->uniqueName()); configGroup.exists()) {
             component->loadSettings(configGroup);
         } else {
             component->loadFromService();
