@@ -787,9 +787,30 @@ void GlobalShortcutsRegistry::detectAppsWithShortcuts()
             continue;
         }
 
-        auto *actionComp = createServiceActionComponent(service);
-        actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
-        actionComp->loadFromService();
+        auto *component = createServiceActionComponent(service);
+        if (KConfigGroup configGroup = _config.group(QStringLiteral("services")).group(component->uniqueName()); configGroup.exists()) {
+            // Now load the contexts
+            const auto groupList = configGroup.groupList();
+            for (const QString &context : groupList) {
+                // Skip the friendly name group, this was previously used instead of _k_friendly_name
+                if (context == QLatin1String("Friendly Name")) {
+                    continue;
+                }
+
+                KConfigGroup contextGroup(&configGroup, context);
+                QString contextFriendlyName = contextGroup.readEntry("_k_friendly_name");
+                component->createGlobalShortcutContext(context, contextFriendlyName);
+                component->activateGlobalShortcutContext(context);
+                component->loadSettings(contextGroup);
+            }
+
+            // Load the default context
+            component->activateGlobalShortcutContext(QStringLiteral("default"));
+            component->loadSettings(configGroup);
+        } else {
+            component->activateGlobalShortcutContext(QStringLiteral("default"));
+            component->loadFromService();
+        }
     }
 }
 
