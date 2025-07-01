@@ -55,6 +55,10 @@ KServiceActionComponent::~KServiceActionComponent() = default;
 
 void KServiceActionComponent::emitGlobalShortcutPressed(const GlobalShortcut &shortcut)
 {
+    if (state != ShortcutKeyState::Pressed) {
+        return;
+    }
+
     KIO::ApplicationLauncherJob *job = nullptr;
 
     if (shortcut.uniqueName() == QLatin1String("_launch")) {

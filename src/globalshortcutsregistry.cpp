@@ -29,6 +29,8 @@
 #include <QPluginLoader>
 #include <QStandardPaths>
 
+using namespace Qt::StringLiterals;
+
 static bool checkPlatform(const QJsonObject &metadata, const QString &platformName)
 {
     const QJsonArray platforms = metadata.value(QStringLiteral("MetaData")).toObject().value(QStringLiteral("platforms")).toArray();
@@ -531,11 +533,18 @@ bool GlobalShortcutsRegistry::processKey(int keyQt)
         m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
     }
 
-    // Invoke the action
-    shortcut->context()->component()->emitGlobalShortcutPressed(*shortcut);
-    m_lastShortcut = shortcut;
+    const bool allowed = !m_useAllowList || std::any_of(m_allowedShortcuts.cbegin(), m_allowedShortcuts.cend(), [shortcut](const ShortcutName &sc) {
+        return sc.componentName == shortcut->context()->component()->uniqueName() && sc.shortcutName == shortcut->uniqueName();
+    });
 
-    return true;
+    if (allowed) {
+        // Invoke the action
+        shortcut->context()->component()->emitGlobalShortcutPressed(*shortcut);
+        m_lastShortcut = shortcut;
+
+        return true;
+    }
+    return false;
 }
 
 bool GlobalShortcutsRegistry::keyReleased(int keyQt)
@@ -748,6 +757,14 @@ void GlobalShortcutsRegistry::loadSettings()
     }
 
     detectAppsWithShortcuts();
+
+    KConfig config(u"kglobalaccelrc"_s);
+    m_useAllowList = config.group(u"General"_s).readEntry("useAllowList", false);
+    QStringList allowed = config.group(u"General"_s).readEntry("allowedShortcuts", QStringList());
+    for (const QString &unparsedName : allowed) {
+        const QStringList splitted = unparsedName.split(u'\t');
+        m_allowedShortcuts << ShortcutName{splitted[0], splitted[1]};
+    }
 }
 
 void GlobalShortcutsRegistry::detectAppsWithShortcuts()
