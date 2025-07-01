@@ -194,6 +194,13 @@ private:
 
     mutable KConfig _config;
 
+    bool m_useAllowList;
+    struct ShortcutName {
+        QString componentName;
+        QString shortcutName;
+    };
+    QList<ShortcutName> m_allowedShortcuts;
+
     QDBusObjectPath _dbusPath;
     GlobalShortcut *m_lastShortcut = nullptr;
     QTimer m_refreshServicesTimer;
