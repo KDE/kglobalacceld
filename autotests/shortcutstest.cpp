@@ -26,7 +26,7 @@ private Q_SLOTS:
 
 private:
     std::unique_ptr<KGlobalAccelD> m_globalacceld;
-    KGlobalAccelInterface *m_interface;
+    KGlobalAccelImpl *m_interface; // implementation of KGlobalAccelInterface * for this test
     KGlobalAccel *m_globalaccel;
 };
 
@@ -155,19 +155,16 @@ void ShortcutsTest::testShortcuts()
     for (const auto &event : events) {
         switch (event.first) {
         case QEvent::KeyPress:
-            QMetaObject::invokeMethod(m_interface, "checkKeyEvent", Qt::DirectConnection, Q_ARG(int, event.second), Q_ARG(ShortcutKeyState, ShortcutKeyState::Pressed));
+            m_interface->checkKeyEvent(event.second, ShortcutKeyState::Pressed);
             break;
         case QEvent::KeyRelease:
-            QMetaObject::invokeMethod(m_interface, "checkKeyEvent", Qt::DirectConnection, Q_ARG(int, event.second), Q_ARG(ShortcutKeyState, ShortcutKeyState::Released));
+            m_interface->checkKeyEvent(event.second, ShortcutKeyState::Released);
             break;
         case QEvent::MouseButtonPress:
-            QMetaObject::invokeMethod(m_interface,
-                                      "checkPointerPressed",
-                                      Qt::DirectConnection,
-                                      Q_ARG(Qt::MouseButtons, static_cast<Qt::MouseButtons>(event.second)));
+            m_interface->checkPointerPressed(static_cast<Qt::MouseButtons>(event.second));
             break;
         case QEvent::Wheel:
-            QMetaObject::invokeMethod(m_interface, "checkAxisTriggered", Qt::DirectConnection, Q_ARG(int, event.second));
+            m_interface->checkAxisTriggered(event.second);
             break;
         default:
             qFatal("Unknown event type");
