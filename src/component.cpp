@@ -171,7 +171,7 @@ void Component::deactivateShortcuts(bool temporarily)
     }
 }
 
-void Component::emitGlobalShortcutPressed(const GlobalShortcut &shortcut)
+void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state)
 {
 #if HAVE_X11
     // pass X11 timestamp
@@ -184,30 +184,24 @@ void Component::emitGlobalShortcutPressed(const GlobalShortcut &shortcut)
         return;
     }
 
-    Q_EMIT globalShortcutPressed(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
-}
-
-void Component::emitGlobalShortcutReleased(const GlobalShortcut &shortcut)
-{
-#if HAVE_X11
-    // pass X11 timestamp
-    const long timestamp = QX11Info::appTime();
-#else
-    const long timestamp = 0;
-#endif
-
-    if (shortcut.context()->component() != this) {
-        return;
+    switch (state) {
+    case ShortcutKeyState::Pressed:
+        Q_EMIT globalShortcutPressed(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
+        break;
+    case ShortcutKeyState::Repeated:
+        Q_EMIT globalShortcutRepeated(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
+        break;
+    case ShortcutKeyState::Released:
+        Q_EMIT globalShortcutReleased(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
+        break;
     }
-
-    Q_EMIT globalShortcutReleased(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
 }
 
 void Component::invokeShortcut(const QString &shortcutName, const QString &context)
 {
     GlobalShortcut *shortcut = getShortcutByName(shortcutName, context);
     if (shortcut) {
-        emitGlobalShortcutPressed(*shortcut);
+        emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Pressed);
     }
 }
 

@@ -12,6 +12,7 @@
 #include <QObject>
 
 #include "kglobalacceld_export.h"
+#include "shortcutkeystate.h"
 
 class GlobalShortcutsRegistry;
 
@@ -55,17 +56,9 @@ protected:
      * called by the implementation to inform us about key presses
      * @returns @c true if the key was handled
      **/
-    bool keyPressed(int keyQt);
+    bool keyEvent(int keyQt, ShortcutKeyState state);
     void grabKeys();
     void ungrabKeys();
-    /**
-     * Called by the implementation to inform us about key releases
-     *
-     * @param keyQt the key that was just released
-     *
-     * @returns @c true if the key was handled
-     **/
-    bool keyReleased(int keyQt);
     /**
      * Called by the implementation to inform us about pointer presses
      * Currently only used for clearing modifier only shortcuts

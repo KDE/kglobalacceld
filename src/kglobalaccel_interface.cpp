@@ -32,9 +32,9 @@ void KGlobalAccelInterface::setRegistry(GlobalShortcutsRegistry *registry)
     d->owner = registry;
 }
 
-bool KGlobalAccelInterface::keyPressed(int keyQt)
+bool KGlobalAccelInterface::keyEvent(int keyQt, ShortcutKeyState state)
 {
-    return d->owner->keyPressed(keyQt);
+    return d->owner->keyEvent(keyQt, state);
 }
 
 void KGlobalAccelInterface::grabKeys()
@@ -45,11 +45,6 @@ void KGlobalAccelInterface::grabKeys()
 void KGlobalAccelInterface::ungrabKeys()
 {
     d->owner->ungrabKeys();
-}
-
-bool KGlobalAccelInterface::keyReleased(int keyQt)
-{
-    return d->owner->keyReleased(keyQt);
 }
 
 bool KGlobalAccelInterface::pointerPressed(Qt::MouseButtons buttons)

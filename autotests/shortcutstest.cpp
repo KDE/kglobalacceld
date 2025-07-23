@@ -155,10 +155,10 @@ void ShortcutsTest::testShortcuts()
     for (const auto &event : events) {
         switch (event.first) {
         case QEvent::KeyPress:
-            QMetaObject::invokeMethod(m_interface, "checkKeyPressed", Qt::DirectConnection, Q_ARG(int, event.second));
+            QMetaObject::invokeMethod(m_interface, "checkKeyEvent", Qt::DirectConnection, Q_ARG(int, event.second), Q_ARG(ShortcutKeyState, ShortcutKeyState::Pressed));
             break;
         case QEvent::KeyRelease:
-            QMetaObject::invokeMethod(m_interface, "checkKeyReleased", Qt::DirectConnection, Q_ARG(int, event.second));
+            QMetaObject::invokeMethod(m_interface, "checkKeyEvent", Qt::DirectConnection, Q_ARG(int, event.second), Q_ARG(ShortcutKeyState, ShortcutKeyState::Released));
             break;
         case QEvent::MouseButtonPress:
             QMetaObject::invokeMethod(m_interface,

@@ -435,34 +435,61 @@ static void correctKeyEvent(int &keyQt)
     keyQt = keySym | keyMod;
 }
 
-bool GlobalShortcutsRegistry::keyPressed(int keyQt)
+bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
 {
     correctKeyEvent(keyQt);
     const int key = keyQt & ~Qt::KeyboardModifierMask;
     const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
+    bool handled = false;
     switch (key) {
     case 0:
         // Invalid key code
         m_state = Normal;
-        _active_sequence = QKeySequence();
-        return false;
+        if (state != ShortcutKeyState::Released) {
+            _active_sequence = QKeySequence();
+        }
+        break;
     case Qt::Key_Shift:
     case Qt::Key_Control:
     case Qt::Key_Alt:
     case Qt::Key_Super_L:
     case Qt::Key_Super_R:
     case Qt::Key_Meta:
-        m_state = PressingModifierOnly;
-        m_currentModifiers = Utils::keyToModifier(key) | modifiers;
-        return false;
+        if (state == ShortcutKeyState::Released) {
+            if (m_state == PressingModifierOnly) {
+                m_state = ReleasingModifierOnly;
+                handled = processKey(m_currentModifiers, ShortcutKeyState::Pressed);
+            }
+            m_currentModifiers = modifiers & ~Utils::keyToModifier(key);
+            if (m_state == ReleasingModifierOnly && !m_currentModifiers) {
+                m_state = Normal;
+            }
+        } else {
+            m_state = PressingModifierOnly;
+            m_currentModifiers = Utils::keyToModifier(key) | modifiers;
+            return false;
+        }
+        break;
     default:
         m_state = Normal;
-        m_currentModifiers = modifiers;
-        return processKey(keyQt);
+        if (state != ShortcutKeyState::Released) {
+            m_currentModifiers = modifiers;
+            handled = processKey(keyQt, state);
+        }
+        break;
     }
+
+    if (state == ShortcutKeyState::Released) {
+        if (m_lastShortcut) {
+            m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, state);
+            m_lastShortcut = nullptr;
+        }
+    }
+
+    return handled;
 }
 
-bool GlobalShortcutsRegistry::processKey(int keyQt)
+bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
 {
     int keys[maxSequenceLength] = {0, 0, 0, 0};
     int count = _active_sequence.count();
@@ -528,52 +555,14 @@ bool GlobalShortcutsRegistry::processKey(int keyQt)
     data.append(shortcut->friendlyName());
 
     if (m_lastShortcut && m_lastShortcut != shortcut) {
-        m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
+        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
     }
 
     // Invoke the action
-    shortcut->context()->component()->emitGlobalShortcutPressed(*shortcut);
+    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
     m_lastShortcut = shortcut;
 
     return true;
-}
-
-bool GlobalShortcutsRegistry::keyReleased(int keyQt)
-{
-    correctKeyEvent(keyQt);
-    bool handled = false;
-    const int key = keyQt & ~Qt::KeyboardModifierMask;
-    const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
-    switch (key) {
-    case 0:
-        // Invalid key code
-        m_state = Normal;
-        break;
-    case Qt::Key_Super_L:
-    case Qt::Key_Super_R:
-    case Qt::Key_Meta:
-    case Qt::Key_Shift:
-    case Qt::Key_Control:
-    case Qt::Key_Alt: {
-        if (m_state == PressingModifierOnly) {
-            m_state = ReleasingModifierOnly;
-            handled = processKey(m_currentModifiers);
-        }
-        m_currentModifiers = modifiers & ~Utils::keyToModifier(key);
-        if (m_state == ReleasingModifierOnly && !m_currentModifiers) {
-            m_state = Normal;
-        }
-        break;
-    }
-    default:
-        m_state = Normal;
-        break;
-    }
-    if (m_lastShortcut) {
-        m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
-        m_lastShortcut = nullptr;
-    }
-    return handled;
 }
 
 bool GlobalShortcutsRegistry::pointerPressed(Qt::MouseButtons pointerButtons)
@@ -879,7 +868,7 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
     }
 
     if (shortcut && shortcut == m_lastShortcut) {
-        m_lastShortcut->context()->component()->emitGlobalShortcutReleased(*m_lastShortcut);
+        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
         m_lastShortcut = nullptr;
     }
 

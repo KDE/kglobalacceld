@@ -38,14 +38,9 @@ void KGlobalAccelImpl::setEnabled(bool enable)
     s_interface = enable ? this : nullptr;
 }
 
-bool KGlobalAccelImpl::checkKeyPressed(int keyQt)
+bool KGlobalAccelImpl::checkKeyEvent(int keyQt, ShortcutKeyState state)
 {
-    return keyPressed(keyQt);
-}
-
-bool KGlobalAccelImpl::checkKeyReleased(int keyQt)
-{
-    return keyReleased(keyQt);
+    return keyEvent(keyQt, state);
 }
 
 bool KGlobalAccelImpl::checkPointerPressed(Qt::MouseButtons button)

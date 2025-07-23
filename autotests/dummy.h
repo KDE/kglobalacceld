@@ -48,8 +48,7 @@ public:
     static KGlobalAccelImpl *instance();
 
 public Q_SLOTS:
-    bool checkKeyPressed(int keyQt);
-    bool checkKeyReleased(int keyQt);
+    bool checkKeyEvent(int keyQt, ShortcutKeyState state);
     bool checkPointerPressed(Qt::MouseButtons button);
     bool checkAxisTriggered(int axis);
 };

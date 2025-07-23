@@ -25,7 +25,7 @@ public:
     ~KServiceActionComponent() override;
 
     void loadFromService();
-    void emitGlobalShortcutPressed(const GlobalShortcut &shortcut) override;
+    void emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state) override;
     void writeSettings(KConfigGroup &config) const override;
     void loadSettings(const KConfigGroup &config) override;
     bool cleanUp() override;

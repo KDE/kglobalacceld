@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include "kglobalaccel_export.h"
+#include "shortcutkeystate.h"
 
 class Component;
 class GlobalShortcut;
@@ -159,12 +160,11 @@ private:
 
     // called by the implementation to inform us about key presses
     // returns true if the key was handled
-    bool keyPressed(int keyQt);
-    bool keyReleased(int keyQt);
+    bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);
     bool axisTriggered(int axis);
 
-    bool processKey(int keyQt);
+    bool processKey(int keyQt, ShortcutKeyState state);
 
     QHash<QKeySequence, GlobalShortcut *> _active_keys;
     QKeySequence _active_sequence;

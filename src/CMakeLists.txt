@@ -70,6 +70,7 @@ install(TARGETS kglobalacceld DESTINATION ${KDE_INSTALL_LIBEXECDIR})
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
+  shortcutkeystate.h
   kglobalacceld.h
   kglobalaccel_interface.h
   DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
