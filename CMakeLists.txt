@@ -109,6 +109,12 @@ install(EXPORT KGlobalAccelDTargets DESTINATION "${CMAKECONFIG_INSTALL_DIR}" FIL
 install(FILES ${kglobalaccel_version_header}
         DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF}/KGlobalAccel COMPONENT Devel)
 
+ecm_qt_install_logging_categories(
+    EXPORT KGLOBALACCELD
+    FILE kglobalacceld.categories
+    DESTINATION ${KDE_INSTALL_LOGGINGCATEGORIESDIR}
+)
+
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES *.cpp *.h *.c)

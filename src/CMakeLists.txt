@@ -3,7 +3,6 @@ set(kglobalaccelprivate_SRCS
     kglobalaccel_interface.cpp
     kserviceactioncomponent.cpp
     component.cpp
-    logging.cpp
     globalshortcut.cpp
     globalshortcutsregistry.cpp
     globalshortcutcontext.cpp
@@ -25,6 +24,15 @@ ecm_generate_export_header(KGlobalAccelD
     DEPRECATION_VERSIONS 4.3 5.90
     EXCLUDE_DEPRECATED_BEFORE_AND_AT ${EXCLUDE_DEPRECATED_BEFORE_AND_AT}
 )
+
+ecm_qt_declare_logging_category(KGlobalAccelD
+   HEADER logging.h
+   IDENTIFIER KGLOBALACCELD
+   CATEGORY_NAME kf.globalaccel.kglobalacceld
+   DEFAULT_SEVERITY Warning
+   DESCRIPTION "KGlobalAccelD"
+   EXPORT KGLOBALACCELD
+   )
 
 target_include_directories(KGlobalAccelD INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD>")
 
@@ -52,7 +60,7 @@ if(XCB_XCB_FOUND)
     target_link_libraries(KGlobalAccelD PUBLIC Qt6::GuiPrivate) # qtx11extras_p.h
 endif()
 
-add_executable(kglobalacceld main.cpp logging.cpp)
+add_executable(kglobalacceld main.cpp)
 
 target_include_directories(kglobalacceld PRIVATE ${CMAKE_BINARY_DIR})
 

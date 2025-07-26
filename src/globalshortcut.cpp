@@ -11,7 +11,7 @@
 #include "component.h"
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
-#include "logging_p.h"
+#include "logging.h"
 
 #include <QKeySequence>
 

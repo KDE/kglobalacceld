@@ -9,7 +9,7 @@
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel_interface.h"
-#include "logging_p.h"
+#include "logging.h"
 #include <config-kglobalaccel.h>
 
 #include <QKeySequence>

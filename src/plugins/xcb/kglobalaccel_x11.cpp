@@ -8,7 +8,7 @@
 
 #include "kglobalaccel_x11.h"
 
-#include "logging_p.h"
+#include "logging.h"
 #include <KKeyServer>
 #include <netwm.h>
 

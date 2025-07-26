@@ -8,7 +8,7 @@
 
 #include "kserviceactioncomponent.h"
 #include "globalshortcutcontext.h"
-#include "logging_p.h"
+#include "logging.h"
 
 #include <QFileInfo>
 

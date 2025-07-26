@@ -12,7 +12,7 @@
 #include "kglobalaccel_interface.h"
 #include "kglobalshortcutinfo_p.h"
 #include "kserviceactioncomponent.h"
-#include "logging_p.h"
+#include "logging.h"
 #include "sequencehelpers_p.h"
 #include <config-kglobalaccel.h>
 

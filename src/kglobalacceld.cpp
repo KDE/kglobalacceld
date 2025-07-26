@@ -15,7 +15,7 @@
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel.h"
 #include "kserviceactioncomponent.h"
-#include "logging_p.h"
+#include "logging.h"
 
 #include <QDBusConnection>
 #include <QDBusMetaType>

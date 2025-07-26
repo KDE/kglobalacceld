@@ -9,7 +9,6 @@
 
 #include "kglobalaccel_version.h"
 #include "kglobalacceld.h"
-#include "logging_p.h"
 
 #include <KAboutData>
 #include <KCrash>
