@@ -904,6 +904,10 @@ void GlobalShortcutsRegistry::scheduleRefreshServices()
 
 void GlobalShortcutsRegistry::refreshServices()
 {
+    if (_dbusPath.path().isEmpty()) {
+        qCDebug(KGLOBALACCELD) << "DBus path is empty, skipping refreshServices()";
+        return;
+    }
     // Remove shortcuts for no longer existing apps
     auto it = std::remove_if(m_components.begin(), m_components.end(), [](const ComponentPtr &component) {
         bool isService = component->uniqueName().endsWith(QLatin1String(".desktop"));
