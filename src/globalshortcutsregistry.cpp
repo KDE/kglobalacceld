@@ -405,12 +405,6 @@ bool GlobalShortcutsRegistry::isShortcutAvailable(const QKeySequence &shortcut, 
     });
 }
 
-Q_GLOBAL_STATIC(GlobalShortcutsRegistry, _self)
-GlobalShortcutsRegistry *GlobalShortcutsRegistry::self()
-{
-    return _self;
-}
-
 static void correctKeyEvent(int &keyQt)
 {
     int keyMod = keyQt & Qt::KeyboardModifierMask;
@@ -589,7 +583,7 @@ Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, c
         return (*it).get();
     }
 
-    auto *c = registerComponent(ComponentPtr(new Component(uniqueName, friendlyName), &unregisterComponent));
+    auto *c = registerComponent(ComponentPtr(new Component(uniqueName, friendlyName, this), &unregisterComponent));
     return c;
 }
 
@@ -609,7 +603,7 @@ KServiceActionComponent *GlobalShortcutsRegistry::createServiceActionComponent(K
         return static_cast<KServiceActionComponent *>((*it).get());
     }
 
-    auto *c = registerComponent(ComponentPtr(new KServiceActionComponent(service), &unregisterComponent));
+    auto *c = registerComponent(ComponentPtr(new KServiceActionComponent(service, this), &unregisterComponent));
     return static_cast<KServiceActionComponent *>(c);
 }
 
@@ -634,7 +628,7 @@ KServiceActionComponent *GlobalShortcutsRegistry::createServiceActionComponent(c
         service = new KService(filePath);
     }
 
-    auto *c = registerComponent(ComponentPtr(new KServiceActionComponent(service), &unregisterComponent));
+    auto *c = registerComponent(ComponentPtr(new KServiceActionComponent(service, this), &unregisterComponent));
 
     return static_cast<KServiceActionComponent *>(c);
 }

@@ -104,7 +104,7 @@ protected:
 
     //! Constructs a component. This is a private constructor, to create a component
     //! use GlobalShortcutsRegistry::self()->createComponent().
-    Component(const QString &uniqueName, const QString &friendlyName);
+    Component(const QString &uniqueName, const QString &friendlyName, GlobalShortcutsRegistry *registry);
 
     /**
      * Create a new globalShortcut by its name

@@ -57,7 +57,7 @@ struct KGlobalAccelDPrivate {
     //! Our holder
     KGlobalAccelD *q;
 
-    GlobalShortcutsRegistry *m_registry = nullptr;
+    std::unique_ptr<GlobalShortcutsRegistry> m_registry = nullptr;
 };
 
 GlobalShortcut *KGlobalAccelDPrivate::findAction(const QStringList &actionId) const
@@ -150,7 +150,10 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
     Q_ASSERT(!component->getShortcutByName(componentUnique, contextUnique));
 
-    return new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique), actionId.at(KGlobalAccel::ActionFriendly), component->shortcutContext(contextUnique));
+    return new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique),
+                              actionId.at(KGlobalAccel::ActionFriendly),
+                              component->shortcutContext(contextUnique),
+                              m_registry.get());
 }
 
 Q_DECLARE_METATYPE(QStringList)
@@ -172,11 +175,11 @@ bool KGlobalAccelD::init()
     qDBusRegisterMetaType<QList<KGlobalShortcutInfo>>();
     qDBusRegisterMetaType<KGlobalAccel::MatchType>();
 
-    d->m_registry = GlobalShortcutsRegistry::self();
+    d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
     Q_ASSERT(d->m_registry);
 
     d->writeoutTimer.setSingleShot(true);
-    connect(&d->writeoutTimer, &QTimer::timeout, d->m_registry, &GlobalShortcutsRegistry::writeSettings);
+    connect(&d->writeoutTimer, &QTimer::timeout, d->m_registry.get(), &GlobalShortcutsRegistry::writeSettings);
 
     if (!QDBusConnection::sessionBus().registerService(QLatin1String("org.kde.kglobalaccel"))) {
         qCWarning(KGLOBALACCELD) << "Failed to register service org.kde.kglobalaccel";
