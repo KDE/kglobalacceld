@@ -51,11 +51,6 @@ class KGLOBALACCEL_EXPORT GlobalShortcutsRegistry : public QObject
     Q_CLASSINFO("D-Bus Interface", "org.kde.KdedGlobalAccel.GlobalShortcutsRegistry")
 
 public:
-    /**
-     * Use GlobalShortcutsRegistry::self()
-     *
-     * @internal
-     */
     GlobalShortcutsRegistry();
     ~GlobalShortcutsRegistry() override;
 
@@ -116,8 +111,6 @@ public:
      * by @p component only in not active contexts.
      */
     bool isShortcutAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
-
-    static GlobalShortcutsRegistry *self();
 
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
 

@@ -45,8 +45,8 @@ QString makeUniqueName(const KService::Ptr &service)
     return service->storageId();
 }
 
-KServiceActionComponent::KServiceActionComponent(KService::Ptr service)
-    : Component(makeUniqueName(service), service->name())
+KServiceActionComponent::KServiceActionComponent(KService::Ptr service, GlobalShortcutsRegistry *registry)
+    : Component(makeUniqueName(service), service->name(), registry)
     , m_service(service)
 {
 }

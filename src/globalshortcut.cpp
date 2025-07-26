@@ -15,16 +15,11 @@
 
 #include <QKeySequence>
 
-GlobalShortcut::GlobalShortcut()
-    : GlobalShortcut(QString{}, QString{}, nullptr)
-{
-}
-
-GlobalShortcut::GlobalShortcut(const QString &uniqueName, const QString &friendlyName, GlobalShortcutContext *context)
+GlobalShortcut::GlobalShortcut(const QString &uniqueName, const QString &friendlyName, GlobalShortcutContext *context, GlobalShortcutsRegistry *registry)
     : _isPresent(false)
     , _isRegistered(false)
     , _isFresh(true)
-    , _registry(GlobalShortcutsRegistry::self())
+    , _registry(registry)
     , _context(context)
     , _uniqueName(uniqueName)
     , _friendlyName(friendlyName)

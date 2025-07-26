@@ -26,8 +26,7 @@ class GlobalShortcutsRegistry;
 class GlobalShortcut
 {
 public:
-    GlobalShortcut(const QString &uniqueName, const QString &friendlyName, GlobalShortcutContext *context);
-    GlobalShortcut();
+    GlobalShortcut(const QString &uniqueName, const QString &friendlyName, GlobalShortcutContext *context, GlobalShortcutsRegistry *registry);
 
     ~GlobalShortcut();
 

@@ -34,7 +34,7 @@ private:
     friend class ::GlobalShortcutsRegistry;
     //! Constructs a KServiceActionComponent. This is a private constuctor, to create
     //! a KServiceActionComponent, use GlobalShortcutsRegistry::self()->createServiceActionComponent().
-    KServiceActionComponent(KService::Ptr service);
+    KServiceActionComponent(KService::Ptr service, GlobalShortcutsRegistry *registry);
 
     KService::Ptr m_service;
 };

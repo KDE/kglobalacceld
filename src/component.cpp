@@ -49,10 +49,10 @@ QString Component::stringFromKeys(const QList<QKeySequence> &keys)
     return ret;
 }
 
-Component::Component(const QString &uniqueName, const QString &friendlyName)
+Component::Component(const QString &uniqueName, const QString &friendlyName, GlobalShortcutsRegistry *registry)
     : _uniqueName(uniqueName)
     , _friendlyName(friendlyName)
-    , _registry(GlobalShortcutsRegistry::self())
+    , _registry(registry)
 {
     // Make sure we do no get uniquenames still containing the context
     Q_ASSERT(uniqueName.indexOf(QLatin1Char('|')) == -1);
@@ -273,7 +273,7 @@ GlobalShortcut *
 Component::registerShortcut(const QString &uniqueName, const QString &friendlyName, const QString &shortcutString, const QString &defaultShortcutString)
 {
     // The shortcut will register itself with us
-    GlobalShortcut *shortcut = new GlobalShortcut(uniqueName, friendlyName, currentContext());
+    GlobalShortcut *shortcut = new GlobalShortcut(uniqueName, friendlyName, currentContext(), _registry);
 
     const QList<QKeySequence> keys = keysFromString(shortcutString);
     shortcut->setDefaultKeys(keysFromString(defaultShortcutString));
