@@ -50,9 +50,6 @@ public:
      */
     bool grabKey(int key, bool grab) override;
 
-    /// Enable/disable all shortcuts. There will not be any grabbed shortcuts at this point.
-    void setEnabled(bool) override;
-
     bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) override;
 
 private:

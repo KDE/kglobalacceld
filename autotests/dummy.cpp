@@ -20,6 +20,7 @@ KGlobalAccelImpl *KGlobalAccelImpl::instance()
 KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
     : KGlobalAccelInterface(parent)
 {
+    s_interface = this;
 }
 
 KGlobalAccelImpl::~KGlobalAccelImpl()
@@ -31,11 +32,6 @@ bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
     Q_UNUSED(keyQt);
     Q_UNUSED(grab);
     return true;
-}
-
-void KGlobalAccelImpl::setEnabled(bool enable)
-{
-    s_interface = enable ? this : nullptr;
 }
 
 bool KGlobalAccelImpl::checkKeyEvent(int keyQt, ShortcutKeyState state)

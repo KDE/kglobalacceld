@@ -185,6 +185,8 @@ KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
     m_remapTimer = new QTimer(this);
     m_remapTimer->setSingleShot(true);
     connect(m_remapTimer, &QTimer::timeout, this, &KGlobalAccelImpl::x11MappingNotify);
+
+    qApp->installNativeEventFilter(this);
 }
 
 KGlobalAccelImpl::~KGlobalAccelImpl()
@@ -461,15 +463,6 @@ bool KGlobalAccelImpl::x11ButtonPress(xcb_button_press_event_t *event)
     Q_UNUSED(event);
     // TODO: get buttons, and differentiate between pointer and axis events
     return pointerPressed(Qt::NoButton);
-}
-
-void KGlobalAccelImpl::setEnabled(bool enable)
-{
-    if (enable && qApp->platformName() == QLatin1String("xcb")) {
-        qApp->installNativeEventFilter(this);
-    } else {
-        qApp->removeNativeEventFilter(this);
-    }
 }
 
 #include "moc_kglobalaccel_x11.cpp"

@@ -42,9 +42,6 @@ public:
      */
     bool grabKey(int key, bool grab) override;
 
-    /// Enable/disable all shortcuts. There will not be any grabbed shortcuts at this point.
-    void setEnabled(bool) override;
-
     static KGlobalAccelImpl *instance();
 
 public Q_SLOTS:

@@ -277,10 +277,6 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     migrateKHotkeys();
     migrateConfig();
 
-    if (_manager) {
-        _manager->setEnabled(true);
-    }
-
     // ksycoca database can change while refreshServices() prunes orphan shortcuts. If that happens,
     // call refreshServices() as a followup in the next event loop cycle.
     connect(KSycoca::self(), &KSycoca::databaseChanged, this, &GlobalShortcutsRegistry::scheduleRefreshServices);
@@ -295,8 +291,6 @@ GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
     m_components.clear();
 
     if (_manager) {
-        _manager->setEnabled(false);
-
         // Ungrab all keys. We don't go over GlobalShortcuts because
         // GlobalShortcutsRegistry::self() doesn't work anymore.
         const auto listKeys = _active_keys.keys();

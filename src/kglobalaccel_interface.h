@@ -44,11 +44,6 @@ public:
      */
     virtual bool grabKey(int key, bool grab) = 0;
 
-    /*
-     * Enable/disable all shortcuts. There will not be any grabbed shortcuts at this point.
-     */
-    virtual void setEnabled(bool) = 0;
-
     void setRegistry(GlobalShortcutsRegistry *registry);
 
 protected:
