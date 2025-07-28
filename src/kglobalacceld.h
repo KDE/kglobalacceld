@@ -11,6 +11,7 @@
 
 #include "kglobalacceld_export.h"
 
+#include "kglobalaccel_interface.h"
 #include <kglobalshortcutinfo.h>
 
 #include <KGlobalAccel>
@@ -47,6 +48,8 @@ public:
     ~KGlobalAccelD() override;
 
     bool init();
+
+    KGlobalAccelInterface *interface() const;
 
 public Q_SLOTS:
 

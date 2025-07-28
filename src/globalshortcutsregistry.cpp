@@ -925,4 +925,9 @@ void GlobalShortcutsRegistry::refreshServices()
     detectAppsWithShortcuts();
 }
 
+KGlobalAccelInterface *GlobalShortcutsRegistry::interface() const
+{
+    return _manager;
+}
+
 #include "moc_globalshortcutsregistry.cpp"

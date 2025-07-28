@@ -126,6 +126,11 @@ Component *KGlobalAccelDPrivate::component(const QStringList &actionId) const
     }
 }
 
+KGlobalAccelInterface * ::KGlobalAccelD::interface() const
+{
+    return d->m_registry->interface();
+}
+
 GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 {
     Q_ASSERT(actionId.size() >= 4);

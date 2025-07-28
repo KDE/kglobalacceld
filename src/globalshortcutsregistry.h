@@ -118,6 +118,8 @@ public:
 
     bool unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut);
 
+    KGlobalAccelInterface *interface() const;
+
 public Q_SLOTS:
 
     void clear();
