@@ -173,22 +173,37 @@ void Component::deactivateShortcuts(bool temporarily)
 
 void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state)
 {
-    const long timestamp = 0;
+    const qlonglong timestamp = 0;
 
     if (shortcut.context()->component() != this) {
         return;
     }
 
     switch (state) {
-    case ShortcutKeyState::Pressed:
+    case ShortcutKeyState::Pressed: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT pressed(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutPressed(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
-    case ShortcutKeyState::Repeated:
+    }
+    case ShortcutKeyState::Repeated: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT repeated(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutRepeated(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
-    case ShortcutKeyState::Released:
+    }
+    case ShortcutKeyState::Released: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT released(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutReleased(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
+    }
     }
 }
 
