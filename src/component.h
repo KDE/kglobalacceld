@@ -175,6 +175,10 @@ Q_SIGNALS:
     //! Signals that a action for this component is not triggered anymore
     Q_SCRIPTABLE void globalShortcutReleased(const QString &componentUnique, const QString &shortcutUnique, qlonglong timestamp);
 
+    Q_SCRIPTABLE void pressed(const QString &actionId, const QVariantMap &options);
+    Q_SCRIPTABLE void repeated(const QString &actionId, const QVariantMap &options);
+    Q_SCRIPTABLE void released(const QString &actionId, const QVariantMap &options);
+
 protected:
     QString _uniqueName;
     // the name as it would be found in a magazine article about the application,

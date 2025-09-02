@@ -173,9 +173,9 @@ void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, Shortcut
 {
 #if HAVE_X11
     // pass X11 timestamp
-    const long timestamp = QX11Info::appTime();
+    const uint32_t timestamp = QX11Info::appTime();
 #else
-    const long timestamp = 0;
+    const uint32_t timestamp = 0;
 #endif
 
     if (shortcut.context()->component() != this) {
@@ -183,15 +183,30 @@ void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, Shortcut
     }
 
     switch (state) {
-    case ShortcutKeyState::Pressed:
+    case ShortcutKeyState::Pressed: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT pressed(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutPressed(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
-    case ShortcutKeyState::Repeated:
+    }
+    case ShortcutKeyState::Repeated: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT repeated(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutRepeated(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
-    case ShortcutKeyState::Released:
+    }
+    case ShortcutKeyState::Released: {
+        const QVariantMap options{
+            {QStringLiteral("x11Timestamp"), timestamp},
+        };
+        Q_EMIT released(shortcut.uniqueName(), options);
         Q_EMIT globalShortcutReleased(shortcut.context()->component()->uniqueName(), shortcut.uniqueName(), timestamp);
         break;
+    }
     }
 }
 
