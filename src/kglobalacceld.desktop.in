@@ -40,7 +40,6 @@ Name[sv]=Globala genvägar
 Name[ta]=முழுதளாவிய சுருக்குவழிகள்
 Name[tr]=Global Kısayollar
 Name[uk]=Загальні скорочення
-Name[x-test]=xxGlobal Shortcutsxx
 Name[zh_CN]=全局快捷键
 Name[zh_TW]=全域快捷鍵
 Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/kglobalacceld
