@@ -28,9 +28,7 @@ QList<QKeySequence> Component::keysFromString(const QString &str)
     const QStringList strList = str.split(QLatin1Char('\t'));
     for (const QString &s : strList) {
         QKeySequence key = QKeySequence::fromString(s, QKeySequence::PortableText);
-        if (!key.isEmpty()) { // sanity check just in case
-            ret.append(key);
-        }
+        ret.append(key);
     }
     return ret;
 }
