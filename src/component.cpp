@@ -38,6 +38,11 @@ QString Component::stringFromKeys(const QList<QKeySequence> &keys)
     if (keys.isEmpty()) {
         return QStringLiteral("none");
     }
+
+    if (keys == QList{QKeySequence()}) {
+        return QStringLiteral("none");
+    }
+
     QString ret;
     for (const QKeySequence &key : keys) {
         ret.append(key.toString(QKeySequence::PortableText));
