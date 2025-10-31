@@ -7,6 +7,8 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
+#include "kglobalacceld_export.h"
+
 #include "globalshortcut.h"
 #include "kglobalshortcutinfo.h"
 
@@ -21,11 +23,12 @@
 class GlobalShortcut;
 class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
+class ShortcutsTest;
 
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
  */
-class Component : public QObject
+class KGLOBALACCELD_EXPORT Component : public QObject
 {
     Q_OBJECT
 
@@ -101,6 +104,7 @@ public:
 
 protected:
     friend class ::GlobalShortcutsRegistry;
+    friend class ::ShortcutsTest;
 
     //! Constructs a component. This is a private constructor, to create a component
     //! use GlobalShortcutsRegistry::self()->createComponent().

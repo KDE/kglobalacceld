@@ -8,6 +8,7 @@
 
 #include "dummy.h"
 #include "kglobalacceld.h"
+#include "component.h"
 
 #include <QPluginLoader>
 #include <QSignalSpy>
@@ -23,6 +24,7 @@ private Q_SLOTS:
     void initTestCase();
     void testShortcuts_data();
     void testShortcuts();
+    void testSerialization();
 
 private:
     std::unique_ptr<KGlobalAccelD> m_globalacceld;
@@ -180,6 +182,21 @@ void ShortcutsTest::testShortcuts()
         QCOMPARE(spy.count(), 0);
     }
     m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testSerialization()
+{
+    QCOMPARE(Component::keysFromString(QLatin1String("none")), QList<QKeySequence>());
+    QCOMPARE(Component::stringFromKeys(QList<QKeySequence>()), QLatin1String("none"));
+
+    QCOMPARE(Component::keysFromString(QLatin1String("")), QList<QKeySequence>() << QKeySequence());
+    QCOMPARE(Component::stringFromKeys(QList<QKeySequence>() << QKeySequence()), QLatin1String(""));
+
+    QCOMPARE(Component::keysFromString(QLatin1String("Ctrl+P")), QList<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P));
+    QCOMPARE(Component::stringFromKeys(QList<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P)), QLatin1String("Ctrl+P"));
+
+    QCOMPARE(Component::keysFromString(QLatin1String("\tCtrl+P\t")), QList<QKeySequence>() << QKeySequence() << QKeySequence(Qt::CTRL | Qt::Key_P) << QKeySequence());
+    QCOMPARE(Component::stringFromKeys(QList<QKeySequence>() << QKeySequence() << QKeySequence(Qt::CTRL | Qt::Key_P) << QKeySequence()), QLatin1String("\tCtrl+P\t"));
 }
 
 QTEST_MAIN(ShortcutsTest)
