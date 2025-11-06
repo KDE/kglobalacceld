@@ -24,14 +24,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    auto sessionManager = qgetenv("SESSION_MANAGER");
-    // Disable Session Management the right way (C)
-    //
-    // ksmserver has global shortcuts. disableSessionManagement() does not prevent Qt from
-    // registering the app with the session manager. We remove the address to make sure we do not
-    // get a hang on kglobalaccel restart (kglobalaccel tries to register with ksmserver,
-    // ksmserver tries to register with kglobalaccel).
-    qunsetenv("SESSION_MANAGER");
+    QCoreApplication::setAttribute(Qt::AA_DisableSessionManager);
 
     QGuiApplication::setDesktopSettingsAware(false);
     QGuiApplication::setQuitLockEnabled(false);
@@ -59,10 +52,6 @@ int main(int argc, char **argv)
     KDBusService service(KDBusService::Unique);
 
     app.setQuitOnLastWindowClosed(false);
-
-    if (!sessionManager.isEmpty()) {
-        qputenv("SESSION_MANAGER", sessionManager);
-    }
 
     // Restart on a crash
     KCrash::setFlags(KCrash::AutoRestart);
