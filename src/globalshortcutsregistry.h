@@ -1,5 +1,7 @@
 /*
     SPDX-FileCopyrightText: 2008 Michael Jansen <kde@michael-jansen.biz>
+    SPDX-FileCopyrightText: 2026 Nicolas Fella <nicolas.fella@gmx.de>
+    SPDX-FileCopyrightText: 2026 Kristen McWilliam <kristen@kde.org>
 
     SPDX-License-Identifier: LGPL-2.0-or-later
 */
@@ -194,12 +196,46 @@ private:
 
     mutable KConfig _config;
 
-    bool m_useAllowList;
+    /**
+     * Flag that enables allow-list enforcement for shortcuts.
+     *
+     * When set to true, only shortcuts listed in m_allowedShortcuts will be
+     * activated.
+     */
+    bool m_useAllowList = false;
+
+    /**
+     * Representation of a single allow-list entry.
+     */
     struct ShortcutName {
+        /**
+         *
+         * Name of the component that owns the shortcut, e.g. kwin, kaccess, etc.
+         */
         QString componentName;
+
+        /**
+         * Name of the shortcut.
+         *
+         * For example, `view_zoom_in`, `Toggle Screen Reader On and Off`, etc.
+         */
         QString shortcutName;
     };
+
+    /**
+     * Allow-list entries loaded from configuration.
+     */
     QList<ShortcutName> m_allowedShortcuts;
+
+    /**
+     * Read allow-list configuration and populate internal state.
+     */
+    void loadAllowListSettings();
+
+    /**
+     * Check whether a shortcut is permitted when the allow-list is active.
+     */
+    bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
     QDBusObjectPath _dbusPath;
     GlobalShortcut *m_lastShortcut = nullptr;

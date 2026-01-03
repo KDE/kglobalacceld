@@ -1,6 +1,8 @@
 /*
     SPDX-FileCopyrightText: 2008 Michael Jansen <kde@michael-jansen.biz>
     SPDX-FileCopyrightText: 2022 Ahmad Samir <a.samirh78@gmail.com>
+    SPDX-FileCopyrightText: 2026 Nicolas Fella <nicolas.fella@gmx.de>
+    SPDX-FileCopyrightText: 2026 Kristen McWilliam <kristen@kde.org>
 
     SPDX-License-Identifier: LGPL-2.0-or-later
 */
@@ -479,6 +481,17 @@ bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
     return handled;
 }
 
+bool GlobalShortcutsRegistry::isShortcutAllowed(const GlobalShortcut *shortcut) const
+{
+    if (!m_useAllowList) {
+        return true;
+    }
+
+    return std::any_of(m_allowedShortcuts.cbegin(), m_allowedShortcuts.cend(), [shortcut](const ShortcutName &sc) {
+        return sc.componentName == shortcut->context()->component()->uniqueName() && sc.shortcutName == shortcut->uniqueName();
+    });
+}
+
 bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
 {
     int keys[maxSequenceLength] = {0, 0, 0, 0};
@@ -548,18 +561,15 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
         m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
     }
 
-    const bool allowed = !m_useAllowList || std::any_of(m_allowedShortcuts.cbegin(), m_allowedShortcuts.cend(), [shortcut](const ShortcutName &sc) {
-        return sc.componentName == shortcut->context()->component()->uniqueName() && sc.shortcutName == shortcut->uniqueName();
-    });
-
-    if (allowed) {
-        // Invoke the action
-        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
-        m_lastShortcut = shortcut;
-
-        return true;
+    if (!isShortcutAllowed(shortcut)) {
+        return false;
     }
-    return false;
+
+    // Invoke the action
+    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
+    m_lastShortcut = shortcut;
+
+    return true;
 }
 
 bool GlobalShortcutsRegistry::pointerPressed(Qt::MouseButtons pointerButtons)
@@ -634,6 +644,32 @@ KServiceActionComponent *GlobalShortcutsRegistry::createServiceActionComponent(c
     auto *c = registerComponent(ComponentPtr(new KServiceActionComponent(service, this), &unregisterComponent));
 
     return static_cast<KServiceActionComponent *>(c);
+}
+
+void GlobalShortcutsRegistry::loadAllowListSettings()
+{
+    KConfig config(u"kglobalaccelrc"_s);
+    m_useAllowList = config.group(u"General"_s).readEntry("useAllowList", false);
+    m_allowedShortcuts.clear();
+
+    const KConfigGroup allowedGroup = config.group(u"AllowedShortcuts"_s);
+    const QStringList componentNames = allowedGroup.keyList();
+    for (const QString &componentName : componentNames) {
+        if (componentName.isEmpty()) {
+            qCWarning(KGLOBALACCELD) << "Skipping allow list entry with empty component name";
+            continue;
+        }
+
+        const QStringList shortcuts = allowedGroup.readEntry(componentName, QStringList());
+        for (const QString &shortcutName : shortcuts) {
+            if (shortcutName.isEmpty()) {
+                qCWarning(KGLOBALACCELD) << "Skipping allow list entry with empty shortcut name for component" << componentName;
+                continue;
+            }
+
+            m_allowedShortcuts << ShortcutName{componentName, shortcutName};
+        }
+    }
 }
 
 void GlobalShortcutsRegistry::loadSettings()
@@ -735,13 +771,7 @@ void GlobalShortcutsRegistry::loadSettings()
 
     detectAppsWithShortcuts();
 
-    KConfig config(u"kglobalaccelrc"_s);
-    m_useAllowList = config.group(u"General"_s).readEntry("useAllowList", false);
-    QStringList allowed = config.group(u"General"_s).readEntry("allowedShortcuts", QStringList());
-    for (const QString &unparsedName : allowed) {
-        const QStringList splitted = unparsedName.split(u'\t');
-        m_allowedShortcuts << ShortcutName{splitted[0], splitted[1]};
-    }
+    loadAllowListSettings();
 }
 
 void GlobalShortcutsRegistry::detectAppsWithShortcuts()
