@@ -450,7 +450,7 @@ bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
         if (state == ShortcutKeyState::Released) {
             if (m_state == PressingModifierOnly) {
                 m_state = ReleasingModifierOnly;
-                handled = processKey(m_currentModifiers, ShortcutKeyState::Pressed);
+                processKey(m_currentModifiers, ShortcutKeyState::Pressed);
             }
             m_currentModifiers = modifiers & ~Utils::keyToModifier(key);
             if (m_state == ReleasingModifierOnly && !m_currentModifiers) {
