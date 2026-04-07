@@ -1,4 +1,5 @@
 set(kglobalaccelprivate_SRCS
+    dbusconnection.cpp
     kglobalacceld.cpp
     kglobalaccel_interface.cpp
     kserviceactioncomponent.cpp

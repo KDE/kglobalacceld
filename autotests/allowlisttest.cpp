@@ -12,9 +12,9 @@
  */
 
 #include "dummy.h"
+#include "dbusconnection_p.h"
 #include "kglobalacceld.h"
 
-#include <QDBusConnection>
 #include <QPluginLoader>
 #include <QSignalSpy>
 #include <QStandardPaths>
@@ -86,7 +86,7 @@ void AllowListTest::testAllowList()
     config.close();
 
     // Ensure the DBus name is free before each init attempt.
-    QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
+    kglobalaccelDBusConnection().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
     auto daemon = std::make_unique<KGlobalAccelD>();
     QVERIFY(daemon->init());
@@ -116,7 +116,7 @@ void AllowListTest::testAllowList()
     KGlobalAccel::self()->removeAllShortcuts(action.get());
 
     daemon.reset();
-    QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
+    kglobalaccelDBusConnection().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 }
 
 void AllowListTest::testAllowListMultipleActions()
@@ -139,7 +139,7 @@ void AllowListTest::testAllowListMultipleActions()
     stream << componentName << '=' << allowedActions.join(QLatin1Char(',')) << "\n";
     config.close();
 
-    QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
+    kglobalaccelDBusConnection().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
     auto daemon = std::make_unique<KGlobalAccelD>();
     QVERIFY(daemon->init());
@@ -188,7 +188,7 @@ void AllowListTest::testAllowListMultipleActions()
     KGlobalAccel::self()->removeAllShortcuts(actionThree.get());
 
     daemon.reset();
-    QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
+    kglobalaccelDBusConnection().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 }
 
 QTEST_MAIN(AllowListTest)

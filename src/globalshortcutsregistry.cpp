@@ -9,6 +9,7 @@
 
 #include "globalshortcutsregistry.h"
 #include "component.h"
+#include "dbusconnection_p.h"
 #include "globalshortcut.h"
 #include "globalshortcutcontext.h"
 #include "kglobalaccel_interface.h"
@@ -317,8 +318,7 @@ Component *GlobalShortcutsRegistry::registerComponent(ComponentPtr component)
     m_components.push_back(std::move(component));
     auto *comp = m_components.back().get();
     Q_ASSERT(!comp->dbusPath().path().isEmpty());
-    QDBusConnection conn(QDBusConnection::sessionBus());
-    conn.registerObject(comp->dbusPath().path(), comp, QDBusConnection::ExportScriptableContents);
+    kglobalaccelDBusConnection().registerObject(comp->dbusPath().path(), comp, QDBusConnection::ExportScriptableContents);
     return comp;
 }
 
@@ -606,7 +606,7 @@ Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, c
 
 void GlobalShortcutsRegistry::unregisterComponent(Component *component)
 {
-    QDBusConnection::sessionBus().unregisterObject(component->dbusPath().path());
+    kglobalaccelDBusConnection().unregisterObject(component->dbusPath().path());
     delete component;
 }
 
