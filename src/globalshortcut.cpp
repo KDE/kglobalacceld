@@ -165,6 +165,16 @@ void GlobalShortcut::setDefaultKeys(const QSet<QKeySequence> &newKeys)
     _defaultKeys = newKeys;
 }
 
+QString GlobalShortcut::inverseActionUniqueName() const
+{
+    return _inverseActionUniqueName;
+}
+
+void GlobalShortcut::setInverseActionUniqueName(const QString &uniqueName)
+{
+    _inverseActionUniqueName = uniqueName;
+}
+
 void GlobalShortcut::setActive()
 {
     if (!_isPresent || _isRegistered) {

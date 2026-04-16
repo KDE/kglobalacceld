@@ -14,6 +14,8 @@
 #include <QKeySequence>
 #include <QStringList>
 
+using namespace Qt::StringLiterals;
+
 QSet<QKeySequence> Component::keysFromString(const QString &str)
 {
     QSet<QKeySequence> ret;
@@ -272,6 +274,30 @@ GlobalShortcut *Component::registerShortcut(const QString &uniqueName,
     return shortcut;
 }
 
+void Component::loadInverseAction(const QString &aUniqueName, const QStringList &configEntry)
+{
+    if (configEntry.size() != 1) { // possibility of later expansion with optional list entries
+        qCWarning(KGLOBALACCELD) << "Inverse action invalid format, ignoring:" << aUniqueName << configEntry;
+        return;
+    }
+    const QString &bUniqueName = configEntry.last();
+    GlobalShortcut *a = currentContext()->_actionsMap.value(aUniqueName);
+    GlobalShortcut *b = currentContext()->_actionsMap.value(bUniqueName);
+    if (!a || !b) {
+        qCWarning(KGLOBALACCELD) << "Inverse action configured but one or both shortcuts not found, ignoring:" << //
+            aUniqueName << static_cast<bool>(a) << "|" << bUniqueName << static_cast<bool>(b);
+        return;
+    }
+    if ((!a->inverseActionUniqueName().isEmpty() && a->inverseActionUniqueName() != bUniqueName)
+        || (!b->inverseActionUniqueName().isEmpty() && b->inverseActionUniqueName() != aUniqueName)) {
+        qCWarning(KGLOBALACCELD) << "Inverse action configured for actions with a pre-existing assignment:" << //
+            aUniqueName << a->inverseActionUniqueName() << "|" << bUniqueName << b->inverseActionUniqueName();
+        return;
+    }
+    a->setInverseActionUniqueName(bUniqueName);
+    b->setInverseActionUniqueName(aUniqueName);
+}
+
 void Component::loadSettings(const KConfigGroup &configGroup, const KConfigGroup &stateGroup)
 {
     // GlobalShortcutsRegistry::loadSettings handles contexts.
@@ -285,6 +311,13 @@ void Component::loadSettings(const KConfigGroup &configGroup, const KConfigGroup
         const uint64_t serial = stateGroup.readEntry<uint64_t>(confKey, 0);
 
         registerShortcut(confKey, entry[2], entry[0], entry[1], serial);
+    }
+
+    const KConfigGroup inverseActionGroup(&configGroup, "$InverseAction"_L1);
+
+    const auto inverseActionKeys = inverseActionGroup.keyList();
+    for (const QString &confKey : inverseActionKeys) {
+        loadInverseAction(confKey, inverseActionGroup.readEntry(confKey, QStringList()));
     }
 }
 
@@ -345,6 +378,8 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
             contextGroup.writeEntry("_k_friendly_name", context->friendlyName());
         }
 
+        KConfigGroup inverseActionGroup(&contextGroup, "$InverseAction"_L1);
+
         // qCDebug(KGLOBALACCELD) << "writing group " << _uniqueName << ":" << context->uniqueName();
 
         for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
@@ -363,8 +398,18 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
 
             contextGroup.writeEntry(shortcut->uniqueName(), entry);
             stateGroup.writeEntry(shortcut->uniqueName(), shortcut->serial());
+
+            if (!shortcut->inverseActionUniqueName().isEmpty() && !inverseActionGroup.hasKey(shortcut->inverseActionUniqueName())) {
+                inverseActionGroup.writeEntry(shortcut->uniqueName(), QStringList{shortcut->inverseActionUniqueName()});
+            }
         }
     }
+}
+
+// static
+bool Component::isReservedConfigGroupName(const QString &name)
+{
+    return name.startsWith("$"_L1); // "$InverseAction", "$Trigger", etc.
 }
 
 #include "moc_component.cpp"
