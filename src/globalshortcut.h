@@ -40,7 +40,13 @@ public:
     //! Return the friendly display name for this shortcut.
     QString friendlyName() const;
 
-    //! Check if the shortcut is active. It's keys are grabbed
+    //! Returns the unique name of the associated inverse action, or empty if not paired.
+    QString inverseActionUniqueName() const;
+
+    //! Check if the shortcut's inverse action also needs to be active at the same time.
+    bool inverseActionCouplingIsMandatory() const;
+
+    //! Check if the shortcut is active. Its keys are grabbed
     bool isActive() const;
 
     //! Check if the shortcut is fresh/new. Is an internal state
@@ -63,6 +69,9 @@ public:
 
     //! Sets the friendly name for the shortcut. For display.
     void setFriendlyName(const QString &);
+
+    //! Sets the inverse action for this shortcut.
+    void setInverseAction(const QString &uniqueName, bool isCouplingMandatory);
 
     //! Sets the shortcut inactive. No longer grabs the keys.
     void setInactive();
@@ -91,6 +100,9 @@ private:
     //! means the shortcut is new
     bool _isFresh : 1;
 
+    //! means the shortcut should not be active unless its inverse is also active
+    bool _inverseActionCouplingIsMandatory : 1;
+
     GlobalShortcutsRegistry *_registry = nullptr;
 
     //! The context the shortcut belongs too
@@ -101,6 +113,8 @@ private:
 
     QList<QKeySequence> _keys;
     QList<QKeySequence> _defaultKeys;
+
+    QString _inverseActionUniqueName;
 };
 
 #endif /* #ifndef GLOBALSHORTCUT_H */

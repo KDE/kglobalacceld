@@ -19,6 +19,7 @@ GlobalShortcut::GlobalShortcut(const QString &uniqueName, const QString &friendl
     : _isPresent(false)
     , _isRegistered(false)
     , _isFresh(true)
+    , _inverseActionCouplingIsMandatory(false)
     , _registry(registry)
     , _context(context)
     , _uniqueName(uniqueName)
@@ -164,6 +165,22 @@ QList<QKeySequence> GlobalShortcut::defaultKeys() const
 void GlobalShortcut::setDefaultKeys(const QList<QKeySequence> &newKeys)
 {
     _defaultKeys = newKeys;
+}
+
+QString GlobalShortcut::inverseActionUniqueName() const
+{
+    return _inverseActionUniqueName;
+}
+
+bool GlobalShortcut::inverseActionCouplingIsMandatory() const
+{
+    return _inverseActionCouplingIsMandatory;
+}
+
+void GlobalShortcut::setInverseAction(const QString &uniqueName, bool isCouplingMandatory)
+{
+    _inverseActionUniqueName = uniqueName;
+    _inverseActionCouplingIsMandatory = isCouplingMandatory;
 }
 
 void GlobalShortcut::setActive()

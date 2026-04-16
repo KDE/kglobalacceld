@@ -102,6 +102,9 @@ public:
 
     virtual void writeSettings(KConfigGroup &config) const;
 
+    //! Returns whether the given sub-group name is reserved for component info as opposed to specific contexts
+    bool isReservedConfigGroupName(const QString &name) const;
+
 protected:
     friend class ::GlobalShortcutsRegistry;
     friend class ::ShortcutsTest;
@@ -121,6 +124,13 @@ protected:
      */
     GlobalShortcut *
     registerShortcut(const QString &uniqueName, const QString &friendlyName, const QString &shortcutString, const QString &defaultShortcutString);
+
+    /**
+     * Assign two already registered actions to each other as inverse actions.
+     * @param aUniqueName internal unique name of a given action
+     * @param configEntry internal unique name of its inverse action, plus optional extra flags
+     */
+    void loadInverseAction(const QString &aUniqueName, const QStringList &configEntry);
 
     static QString stringFromKeys(const QList<QKeySequence> &keys);
     static QList<QKeySequence> keysFromString(const QString &str);

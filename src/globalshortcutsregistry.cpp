@@ -714,6 +714,10 @@ void GlobalShortcutsRegistry::loadSettings()
             if (context == QLatin1String("Friendly Name")) {
                 continue;
             }
+            // Skip any other sub-groups that are used to store extended action info
+            if (component->isReservedConfigGroupName(context)) {
+                continue;
+            }
 
             const KConfigGroup contextGroup(&configGroup, context);
             QString contextFriendlyName = contextGroup.readEntry("_k_friendly_name");

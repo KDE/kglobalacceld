@@ -549,6 +549,33 @@ void KGlobalAccelD::setForeignShortcutKeys(const QStringList &actionId, const QL
     Q_EMIT yourShortcutsChanged(actionId, newKeys);
 }
 
+bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,
+                                              const QString &forwardActionUnique,
+                                              const QString &backwardActionUnique,
+                                              uint inverseSetterFlags)
+{
+    GlobalShortcut *forwardShortcut = d->findAction(componentUnique, forwardActionUnique);
+    GlobalShortcut *backwardShortcut = d->findAction(componentUnique, backwardActionUnique);
+    if (!forwardShortcut || !backwardShortcut) {
+        qCWarning(KGLOBALACCELD) << "Inverse actions not assigned: one or both shortcuts were not registered when calling setInverseShortcutActions()";
+        return false;
+    }
+    bool isCouplingMandatory = inverseSetterFlags & InverseActionCouplingIsMandatory;
+
+    if (forwardShortcut->inverseActionUniqueName() == backwardActionUnique //
+        && forwardShortcut->inverseActionCouplingIsMandatory() == isCouplingMandatory //
+        && backwardShortcut->inverseActionUniqueName() == forwardActionUnique //
+        && backwardShortcut->inverseActionCouplingIsMandatory() == isCouplingMandatory) {
+        // no changes, everything is as it was already loaded beforehand
+        return true;
+    }
+
+    forwardShortcut->setInverseAction(backwardActionUnique, isCouplingMandatory);
+    backwardShortcut->setInverseAction(forwardActionUnique, isCouplingMandatory);
+    scheduleWriteSettings();
+    return true;
+}
+
 void KGlobalAccelD::scheduleWriteSettings() const
 {
     if (!d->writeoutTimer.isActive()) {

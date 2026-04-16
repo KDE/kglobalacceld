@@ -44,6 +44,10 @@ public:
     Q_DECLARE_FLAGS(SetShortcutFlags, SetShortcutFlag)
     Q_FLAG(SetShortcutFlags)
 
+    enum SetInverseActionFlag {
+        InverseActionCouplingIsMandatory = 0x1,
+    };
+
     explicit KGlobalAccelD(QObject *parent = nullptr);
     ~KGlobalAccelD() override;
 
@@ -111,6 +115,10 @@ public Q_SLOTS:
     Q_SCRIPTABLE void setForeignShortcut(const QStringList &actionId, const QList<int> &keys);
 #endif
     Q_SCRIPTABLE void setForeignShortcutKeys(const QStringList &actionId, const QList<QKeySequence> &keys);
+
+    //! \since 6.7
+    Q_SCRIPTABLE bool
+    setInverseShortcutActions(const QString &componentUnique, const QString &forwardActionUnique, const QString &backwardActionUnique, uint couplingFlags);
 
     // to be called when a KAction is destroyed. The shortcut stays in the data structures for
     // conflict resolution but won't trigger.
