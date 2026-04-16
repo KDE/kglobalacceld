@@ -115,6 +115,10 @@ public Q_SLOTS:
 #endif
     Q_SCRIPTABLE void setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys);
 
+    //! \since 6.8
+    Q_SCRIPTABLE bool
+    setInverseShortcutActions(const QString &componentUnique, const QString &forwardActionUnique, const QString &backwardActionUnique, uint couplingFlags);
+
     // to be called when a KAction is destroyed. The shortcut stays in the data structures for
     // conflict resolution but won't trigger.
     Q_SCRIPTABLE void setInactive(const QStringList &actionId);

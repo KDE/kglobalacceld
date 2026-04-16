@@ -568,6 +568,40 @@ void KGlobalAccelD::setForeignShortcutKeys(const QStringList &actionId, const QS
     Q_EMIT yourShortcutsChanged(actionId, newKeys);
 }
 
+bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,
+                                              const QString &forwardActionUnique,
+                                              const QString &backwardActionUnique,
+                                              uint inverseSetterFlags)
+{
+    if (inverseSetterFlags != 0) { // reserved, may change pair assignment behaviors
+        return false;
+    }
+
+    GlobalShortcut *forwardShortcut = d->findAction(componentUnique, forwardActionUnique);
+    GlobalShortcut *backwardShortcut = d->findAction(componentUnique, backwardActionUnique);
+    if (!forwardShortcut || !backwardShortcut) {
+        qCWarning(KGLOBALACCELD) << "Inverse actions" << componentUnique << forwardActionUnique << backwardActionUnique
+                                 << "not assigned: one or both shortcuts were not registered when calling setInverseShortcutActions()";
+        return false;
+    }
+    const QString existingInverseOfForward = forwardShortcut->inverseActionUniqueName();
+    const QString existingInverseOfBackward = backwardShortcut->inverseActionUniqueName();
+
+    if (existingInverseOfForward == backwardActionUnique && existingInverseOfBackward == forwardActionUnique) {
+        // no changes, everything is as it was already loaded beforehand
+        return true;
+    } else if (!existingInverseOfForward.isEmpty() || !existingInverseOfBackward.isEmpty()) {
+        qCWarning(KGLOBALACCELD) << "Inverse actions" << componentUnique << forwardActionUnique << backwardActionUnique
+                                 << "not assigned: existing inverse actions exist and differ from requested action pair";
+        return false;
+    }
+
+    forwardShortcut->setInverseActionUniqueName(backwardActionUnique);
+    backwardShortcut->setInverseActionUniqueName(forwardActionUnique);
+    scheduleWriteSettings();
+    return true;
+}
+
 void KGlobalAccelD::scheduleWriteSettings() const
 {
     if (!d->writeoutTimer.isActive()) {
