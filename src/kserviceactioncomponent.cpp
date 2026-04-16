@@ -153,6 +153,14 @@ void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup, cons
         shortcut->setIsPresent(true);
     }
 
+    // Inverse actions - load only after all actions are registered, so they can be properly paired
+    for (const KServiceAction &action : actions) {
+        const QStringList entry = action.property<QStringList>(QStringLiteral("X-KDE-InverseAction"));
+        if (!entry.isEmpty()) {
+            loadInverseAction(action.name(), entry);
+        }
+    }
+
     const QString type = m_service->property<QString>(QStringLiteral("X-KDE-GlobalShortcutType"));
 
     // Type can be Application or Service
