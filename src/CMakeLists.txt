@@ -23,12 +23,12 @@ ecm_generate_export_header(KGlobalAccelD
 )
 
 ecm_qt_declare_logging_category(KGlobalAccelD
-   HEADER logging.h
-   IDENTIFIER KGLOBALACCELD
-   CATEGORY_NAME kf.globalaccel.kglobalacceld
-   DESCRIPTION "KGlobalAccelD"
-   EXPORT KGLOBALACCELD
-   )
+    HEADER logging.h
+    IDENTIFIER KGLOBALACCELD
+    CATEGORY_NAME kf.globalaccel.kglobalacceld
+    DESCRIPTION "KGlobalAccelD"
+    EXPORT KGLOBALACCELD
+)
 
 target_include_directories(KGlobalAccelD INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD>")
 
@@ -45,18 +45,19 @@ target_link_libraries(KGlobalAccelD
         KF6::JobWidgets
 )
 
-set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
-                                                SOVERSION ${KGLOBALACCELD_SOVERSION}
-                                                EXPORT_NAME "KGlobalAccelD"
+set_target_properties(KGlobalAccelD PROPERTIES
+    VERSION ${KGLOBALACCELD_VERSION}
+    SOVERSION ${KGLOBALACCELD_SOVERSION}
+    EXPORT_NAME "KGlobalAccelD"
 )
 
 target_compile_definitions(KGlobalAccelD PRIVATE -DQDBUS=${qdbus_EXECUTABLE})
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
-  shortcutkeystate.h
-  kglobalacceld.h
-  DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
+    ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
+    shortcutkeystate.h
+    kglobalacceld.h
+    DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
 
 install(TARGETS KGlobalAccelD EXPORT KGlobalAccelDTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
