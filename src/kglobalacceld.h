@@ -20,6 +20,7 @@
 #include <QList>
 #include <QStringList>
 
+class KGlobalShortcutTrigger;
 struct KGlobalAccelDPrivate;
 
 /**
@@ -53,6 +54,26 @@ public:
     bool pointerPressed(Qt::MouseButtons pointerButtons);
     bool axisTriggered(int axis);
     void resetModifierOnlyState();
+
+    /*!
+     * Inform KGlobalAccelD about the status of an active trigger.
+     *
+     * `ShortcutTriggerEvent::Triggered` will invoke the assigned action, in the same way that an
+     * analogous keyboard shortcut would invoke it. Sending `ShortcutTriggerEvent::Started`
+     * prior to a `Triggered` or `Cancelled` event is optional.
+     *
+     * Events for inactive triggers will be ignored.
+     *
+     * \sa triggerActive
+     * \since 6.8
+     */
+    bool triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event);
+
+    /*!
+     * To be called by KGlobalAccelD owner (e.g. KWin) to set defaults for its own and external gestures.
+     * \since 6.8
+     */
+    void setDefaultShortcutTriggers(const QString &componentUnique, const QString &shortcutUnique, const QSet<KGlobalShortcutTrigger> &triggers);
 
 public Q_SLOTS:
 
@@ -196,9 +217,31 @@ Q_SIGNALS:
 
     Q_SCRIPTABLE void yourShortcutsChanged(const QStringList &actionId, const QSet<QKeySequence> &newKeys);
 
-private:
-    void scheduleWriteSettings() const;
+    /**
+     * This function tells the owner (e.g. KWin) that a certain trigger/action pair is now active
+     * or inactive, depending on the \b active boolean.
+     *
+     * The owner should monitor active triggers and call triggerEvent() to notify KGlobalAccel
+     * about their status. Alternatively, the owner can choose to implement a custom behavior
+     * (e.g. live gesture updates) depending on the component/action arguments.
+     *
+     * Before destruction, every previously activated trigger will be signalled as inactive.
+     *
+     * \param trigger the trigger to activate or deactivate
+     * \param active true if the trigger will invoke the stated action, false if it gets deactivated again
+     * \param componentName unique name of the action's registered component
+     * \param actionId unique name of the action within its component
+     * \param componentFriendlyName user-visible name of the action's registered component
+     * \param actionFriendlyName user-visible name of the action within its component
+     */
+    void triggerActive(const KGlobalShortcutTrigger &trigger,
+                       bool active,
+                       const QString &componentName,
+                       const QString &actionId,
+                       const QString &componentFriendlyName,
+                       const QString &actionFriendlyName);
 
+private:
     KGlobalAccelDPrivate *const d;
 };
 
