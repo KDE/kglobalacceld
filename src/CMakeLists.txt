@@ -1,6 +1,7 @@
 set(kglobalaccelprivate_SRCS
     kglobalacceld.cpp
     kglobalshortcutinfoext.cpp
+    kglobalshortcuttrigger.cpp
     kserviceactioncomponent.cpp
     component.cpp
     globalshortcut.cpp
@@ -66,6 +67,7 @@ target_compile_definitions(KGlobalAccelD PRIVATE -DQDBUS=${qdbus_EXECUTABLE})
 ecm_generate_headers(KGlobalAccelD_HEADERS
   HEADER_NAMES
   KGlobalShortcutInfoExt
+  KGlobalShortcutTrigger
 
   REQUIRED_HEADERS KGlobalAccelD_HEADERS
 )
@@ -75,6 +77,7 @@ install(FILES
     shortcutkeystate.h
     kglobalacceld.h
     kglobalshortcutinfoext.h
+    kglobalshortcuttrigger.h
     ${KGlobalAccelD_HEADERS}
     DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
