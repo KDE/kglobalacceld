@@ -11,10 +11,18 @@
 #include "logging.h"
 #include "sequencehelpers_p.h"
 
+#include <KGlobalShortcutTrigger>
+
 #include <QKeySequence>
 #include <QStringList>
 
 using namespace Qt::StringLiterals;
+
+namespace
+{
+constexpr QLatin1StringView CurrentTriggerSuffix = "|Current"_L1;
+constexpr QLatin1StringView DefaultTriggerSuffix = "|Default"_L1;
+}
 
 QSet<QKeySequence> Component::keysFromString(const QString &str)
 {
@@ -214,6 +222,15 @@ QList<GlobalShortcut *> Component::getShortcutsByKey(const QKeySequence &key, KG
     return rc;
 }
 
+QList<GlobalShortcut *> Component::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    QList<GlobalShortcut *> rc;
+    for (GlobalShortcutContext *context : std::as_const(_contexts)) {
+        rc += context->getShortcutsByTrigger(trigger);
+    }
+    return rc;
+}
+
 GlobalShortcut *Component::getShortcutByName(const QString &uniqueName, const QString &context) const
 {
     const GlobalShortcutContext *shortcutContext = _contexts.value(context);
@@ -237,18 +254,36 @@ bool Component::isActive() const
     return false;
 }
 
-bool Component::isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const
+bool Component::isShortcutKeyAvailable(const QKeySequence &key, const QString &component, const QString &context) const
 {
     qCDebug(KGLOBALACCELD) << key.toString() << component;
 
     // if this component asks for the key. only check the keys in the same
     // context
     if (component == uniqueName()) {
-        return shortcutContext(context)->isShortcutAvailable(key);
+        return shortcutContext(context)->isShortcutKeyAvailable(key);
     } else {
         for (auto it = _contexts.cbegin(), endIt = _contexts.cend(); it != endIt; ++it) {
             const GlobalShortcutContext *ctx = it.value();
-            if (!ctx->isShortcutAvailable(key)) {
+            if (!ctx->isShortcutKeyAvailable(key)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool Component::isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger, const QString &component, const QString &context) const
+{
+    qCDebug(KGLOBALACCELD) << trigger.type() << trigger.paramString() << component;
+
+    // if this component asks for the trigger, only check the triggers in the same context
+    if (component == uniqueName()) {
+        return shortcutContext(context)->isShortcutTriggerAvailable(trigger);
+    } else {
+        for (auto it = _contexts.cbegin(), endIt = _contexts.cend(); it != endIt; ++it) {
+            const GlobalShortcutContext *ctx = it.value();
+            if (!ctx->isShortcutTriggerAvailable(trigger)) {
                 return false;
             }
         }
@@ -258,8 +293,8 @@ bool Component::isShortcutAvailable(const QKeySequence &key, const QString &comp
 
 GlobalShortcut *Component::registerShortcut(const QString &uniqueName,
                                             const QString &friendlyName,
-                                            const QString &shortcutString,
-                                            const QString &defaultShortcutString,
+                                            const QString &shortcutKeysString,
+                                            const QString &defaultShortcutKeysString,
                                             uint64_t serial)
 {
     if (!serial) {
@@ -268,8 +303,8 @@ GlobalShortcut *Component::registerShortcut(const QString &uniqueName,
     }
 
     GlobalShortcut *shortcut = new GlobalShortcut(uniqueName, friendlyName, serial, currentContext(), _registry);
-    shortcut->setKeys(keysFromString(shortcutString));
-    shortcut->setDefaultKeys(keysFromString(defaultShortcutString));
+    shortcut->setKeys(keysFromString(shortcutKeysString));
+    shortcut->setDefaultKeys(keysFromString(defaultShortcutKeysString));
     shortcut->setIsFresh(false);
     return shortcut;
 }
@@ -298,6 +333,21 @@ void Component::loadInverseAction(const QString &aUniqueName, const QStringList 
     b->setInverseActionUniqueName(aUniqueName);
 }
 
+void Component::loadTriggers(GlobalShortcut *shortcut, const QString &triggerType, const QStringList &triggerParamStrings, bool isDefault)
+{
+    QSet<KGlobalShortcutTrigger> triggers;
+    triggers.reserve(triggerParamStrings.size());
+
+    for (const QString &triggerParamString : triggerParamStrings) {
+        triggers.insert(KGlobalShortcutTrigger(triggerType, triggerParamString));
+    }
+
+    if (isDefault) {
+        shortcut->setDefaultTriggers(triggerType, triggers);
+    }
+    shortcut->setTriggers(triggerType, triggers, isDefault ? GlobalShortcut::FromDefaults : GlobalShortcut::FromOverride);
+}
+
 void Component::loadSettings(const KConfigGroup &configGroup, const KConfigGroup &stateGroup)
 {
     // GlobalShortcutsRegistry::loadSettings handles contexts.
@@ -311,6 +361,31 @@ void Component::loadSettings(const KConfigGroup &configGroup, const KConfigGroup
         const uint64_t serial = stateGroup.readEntry<uint64_t>(confKey, 0);
 
         registerShortcut(confKey, entry[2], entry[0], entry[1], serial);
+    }
+
+    const KConfigGroup triggersGroup(&configGroup, "$Triggers"_L1);
+
+    const auto actionTriggersGroups = triggersGroup.groupList();
+    for (const QString &actionUnique : actionTriggersGroups) {
+        GlobalShortcut *shortcut = _current->_actionsMap.value(actionUnique, nullptr);
+        if (!shortcut) {
+            continue;
+        }
+        const KConfigGroup actionTriggersGroup(&triggersGroup, actionUnique);
+        const auto triggerTypeKeys = actionTriggersGroup.keyList();
+
+        for (const QString &confKey : triggerTypeKeys) {
+            if (confKey.endsWith(DefaultTriggerSuffix)) {
+                const QString triggerType = confKey.first(confKey.size() - DefaultTriggerSuffix.size());
+                loadTriggers(shortcut, triggerType, actionTriggersGroup.readEntry(confKey, QStringList()), true);
+                continue;
+            }
+            if (confKey.endsWith(CurrentTriggerSuffix)) {
+                const QString triggerType = confKey.first(confKey.size() - CurrentTriggerSuffix.size());
+                loadTriggers(shortcut, triggerType, actionTriggersGroup.readEntry(confKey, QStringList()), false);
+                continue;
+            }
+        }
     }
 
     const KConfigGroup inverseActionGroup(&configGroup, "$InverseAction"_L1);
@@ -379,6 +454,9 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
         }
 
         KConfigGroup inverseActionGroup(&contextGroup, "$InverseAction"_L1);
+        KConfigGroup triggersGroup(&contextGroup, "$Triggers"_L1);
+
+        QStringList triggerParamStrings; // avoid reallocating the list for every shortcut with triggers
 
         // qCDebug(KGLOBALACCELD) << "writing group " << _uniqueName << ":" << context->uniqueName();
 
@@ -401,6 +479,31 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
 
             if (!shortcut->inverseActionUniqueName().isEmpty() && !inverseActionGroup.hasKey(shortcut->inverseActionUniqueName())) {
                 inverseActionGroup.writeEntry(shortcut->uniqueName(), QStringList{shortcut->inverseActionUniqueName()});
+            }
+
+            KConfigGroup actionTriggersGroup(&triggersGroup, shortcut->uniqueName());
+            const auto triggerTypes = shortcut->triggerTypes();
+
+            for (const QString &triggerType : triggerTypes) {
+                const auto defaultTriggers = shortcut->defaultTriggers(triggerType);
+
+                // defaults
+                if (!defaultTriggers.isEmpty()) {
+                    triggerParamStrings.clear();
+                    for (const KGlobalShortcutTrigger &trigger : defaultTriggers) {
+                        triggerParamStrings.append(trigger.paramString());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + DefaultTriggerSuffix, triggerParamStrings);
+                }
+
+                if (shortcut->hasOverrideTriggerAssignments(triggerType)) {
+                    triggerParamStrings.clear();
+                    const auto triggers = shortcut->triggers(triggerType);
+                    for (const KGlobalShortcutTrigger &trigger : triggers) {
+                        triggerParamStrings.append(trigger.paramString());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + CurrentTriggerSuffix, triggerParamStrings);
+                }
             }
         }
     }

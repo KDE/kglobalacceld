@@ -7,12 +7,10 @@
 #include "globalshortcutcontext.h"
 
 #include "globalshortcut.h"
-
-#include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "sequencehelpers_p.h"
 
 GlobalShortcutContext::GlobalShortcutContext(const QString &uniqueName, const QString &friendlyName, Component *component)
-
     : _uniqueName(uniqueName)
     , _friendlyName(friendlyName)
     , _component(component)
@@ -97,6 +95,25 @@ QList<GlobalShortcut *> GlobalShortcutContext::getShortcutsByKey(const QKeySeque
     return ret;
 }
 
+QList<GlobalShortcut *> GlobalShortcutContext::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    if (trigger.isEmpty()) {
+        return {};
+    }
+
+    QList<GlobalShortcut *> ret;
+    for (GlobalShortcut *sc : std::as_const(_actionsMap)) {
+        const auto triggers = sc->triggers(trigger.type());
+        for (const KGlobalShortcutTrigger &other : triggers) {
+            if (other == trigger) {
+                ret.append(sc);
+            }
+        }
+    }
+
+    return ret;
+}
+
 GlobalShortcut *GlobalShortcutContext::takeShortcut(GlobalShortcut *shortcut)
 {
     // Try to take the shortcut. Result could be nullptr if the shortcut doesn't
@@ -109,12 +126,25 @@ QString GlobalShortcutContext::uniqueName() const
     return _uniqueName;
 }
 
-bool GlobalShortcutContext::isShortcutAvailable(const QKeySequence &key) const
+bool GlobalShortcutContext::isShortcutKeyAvailable(const QKeySequence &key) const
 {
     for (auto it = _actionsMap.cbegin(), endIt = _actionsMap.cend(); it != endIt; ++it) {
         const GlobalShortcut *sc = it.value();
         if (Utils::matchSequences(key, sc->keys())) {
             return false;
+        }
+    }
+    return true;
+}
+
+bool GlobalShortcutContext::isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger) const
+{
+    for (const GlobalShortcut *sc : std::as_const(_actionsMap)) {
+        const auto otherTriggers = sc->triggers(trigger.type());
+        for (const KGlobalShortcutTrigger &otherTrigger : otherTriggers) {
+            if (trigger.conflictsWith(otherTrigger)) {
+                return false;
+            }
         }
     }
     return true;
