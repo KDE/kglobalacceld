@@ -8,11 +8,16 @@ This file is part of the KDE libraries
 #ifndef KEYBOARDKEYSTATE_H
 #define KEYBOARDKEYSTATE_H
 
-enum class ShortcutKeyState
-{
+enum class ShortcutKeyState {
     Pressed,
     Repeated,
     Released
+};
+
+enum class ShortcutTriggerEvent {
+    Started,
+    Triggered,
+    Cancelled
 };
 
 #endif

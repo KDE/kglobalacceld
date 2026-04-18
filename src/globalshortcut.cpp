@@ -11,6 +11,7 @@
 #include "component.h"
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
+#include "kglobalshortcuttrigger.h"
 #include "logging.h"
 
 #include <QKeySequence>
@@ -128,6 +129,11 @@ QSet<QKeySequence> GlobalShortcut::keys() const
     return _keys;
 }
 
+QSet<KGlobalShortcutTrigger> GlobalShortcut::triggers(const QString &triggerType) const
+{
+    return _triggers.value(triggerType, TriggerLists{}).assigned;
+}
+
 void GlobalShortcut::setKeys(const QSet<QKeySequence> &newKeys)
 {
     bool active = _isRegistered;
@@ -155,14 +161,78 @@ void GlobalShortcut::setKeys(const QSet<QKeySequence> &newKeys)
     }
 }
 
+void GlobalShortcut::setTriggers(const QString &triggerType, const QSet<KGlobalShortcutTrigger> &newTriggers, AssignmentType assignmentType)
+{
+    TriggerLists &triggerListsRef = _triggers[triggerType];
+
+    if (triggerListsRef.hasOverrideAssignments && assignmentType == FromDefaults) {
+        return;
+    }
+
+    bool active = _isRegistered;
+    if (active) {
+        setInactive();
+    }
+
+    if (Q_UNLIKELY(KGLOBALACCELD().isDebugEnabled())) {
+        for (const KGlobalShortcutTrigger &trigger : newTriggers) {
+            if (trigger.isEmpty()) {
+                continue;
+            }
+            // We could check here for each trigger.type() to match the given triggerType parameter,
+            // but this function is only called internally with newTriggers explicitly sorted
+            // by triggerType. So we'll save ourselves the complexity of bailing on a type mismatch.
+
+            const auto shortcuts = _registry->getShortcutsByTrigger(trigger);
+            for (const GlobalShortcut *shortcut : shortcuts) {
+                qCDebug(KGLOBALACCELD) << _uniqueName << "may not be triggered by" << trigger.toString() << "because it is already taken by"
+                                       << shortcut->uniqueName();
+            }
+        }
+    }
+
+    triggerListsRef.hasOverrideAssignments = (assignmentType == FromOverride);
+    triggerListsRef.assigned = newTriggers;
+
+    if (active) {
+        setActive();
+    }
+}
+
+bool GlobalShortcut::hasOverrideTriggerAssignments(const QString &triggerType) const
+{
+    return _triggers.value(triggerType, TriggerLists{}).hasOverrideAssignments;
+}
+
 QSet<QKeySequence> GlobalShortcut::defaultKeys() const
 {
     return _defaultKeys;
 }
 
+QStringList GlobalShortcut::triggerTypes() const
+{
+    return _triggers.keys();
+}
+
+QSet<KGlobalShortcutTrigger> GlobalShortcut::defaultTriggers(const QString &triggerType) const
+{
+    return _triggers.value(triggerType, TriggerLists{}).defaults;
+}
+
 void GlobalShortcut::setDefaultKeys(const QSet<QKeySequence> &newKeys)
 {
     _defaultKeys = newKeys;
+}
+
+void GlobalShortcut::setDefaultTriggers(const QString &triggerType, const QSet<KGlobalShortcutTrigger> &newTriggers)
+{
+    for (const auto &trigger : newTriggers) {
+        if (trigger.type() != triggerType) {
+            qCWarning(KGLOBALACCELD) << _uniqueName << "skipping default assignment because trigger type" << trigger.type() << "is not" << triggerType;
+            return;
+        }
+    }
+    _triggers[triggerType].defaults = newTriggers;
 }
 
 QString GlobalShortcut::inverseActionUniqueName() const
@@ -189,6 +259,14 @@ void GlobalShortcut::setActive()
         }
     }
 
+    for (const auto &triggerLists : std::as_const(_triggers)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!_registry->registerTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to register " << trigger.type() << trigger.paramString();
+            }
+        }
+    }
+
     _isRegistered = true;
 }
 
@@ -202,6 +280,14 @@ void GlobalShortcut::setInactive()
     for (const QKeySequence &key : std::as_const(_keys)) {
         if (!key.isEmpty() && !_registry->unregisterKey(key, this)) {
             qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << QKeySequence(key).toString();
+        }
+    }
+
+    for (const auto &triggerLists : std::as_const(_triggers)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!_registry->unregisterTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << trigger.type() << trigger.paramString();
+            }
         }
     }
 

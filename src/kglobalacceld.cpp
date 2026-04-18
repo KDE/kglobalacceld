@@ -14,6 +14,7 @@
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
 #include "sequencehelpers_p.h"
@@ -63,6 +64,8 @@ struct KGlobalAccelDPrivate {
 
     GlobalShortcut *addAction(const QStringList &actionId);
 
+    void sortAndSetDefaultTriggers(GlobalShortcut *shortcut, const QSet<KGlobalShortcutTrigger> &triggers);
+
     void scheduleWriteSettings();
 
     void splitComponent(QString &component, QString &context) const
@@ -83,6 +86,9 @@ struct KGlobalAccelDPrivate {
     KGlobalAccelD *q;
 
     std::unique_ptr<GlobalShortcutsRegistry> m_registry = nullptr;
+
+    using ComponentActionPair = QPair<QString, QString>;
+    QHash<ComponentActionPair, QSet<KGlobalShortcutTrigger>> m_queuedDefaultTriggers;
 };
 
 GlobalShortcut *KGlobalAccelDPrivate::findAction(const QStringList &actionId) const
@@ -127,6 +133,24 @@ GlobalShortcut *KGlobalAccelDPrivate::findAction(const QString &_componentUnique
     return shortcut;
 }
 
+void KGlobalAccelDPrivate::sortAndSetDefaultTriggers(GlobalShortcut *shortcut, const QSet<KGlobalShortcutTrigger> &triggers)
+{
+    QHash<QString, QSet<KGlobalShortcutTrigger>> triggersByType;
+    for (const KGlobalShortcutTrigger &trigger : triggers) {
+        triggersByType[trigger.type()].insert(trigger);
+    }
+
+    for (const auto &[triggerType, typeTriggers] : triggersByType.asKeyValueRange()) {
+        if (shortcut->defaultTriggers(triggerType) != typeTriggers) {
+            shortcut->setDefaultTriggers(triggerType, typeTriggers);
+            scheduleWriteSettings();
+
+            // also update assigned triggers if no overrides have been assigned
+            shortcut->setTriggers(triggerType, typeTriggers, GlobalShortcut::FromDefaults);
+        }
+    }
+}
+
 GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 {
     Q_ASSERT(actionId.size() >= 4);
@@ -147,11 +171,16 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
     Q_ASSERT(!component->getShortcutByName(componentUnique, contextUnique));
 
-    return new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique),
-                              actionId.at(KGlobalAccel::ActionFriendly),
-                              m_registry->nextSerial(),
-                              component->shortcutContext(contextUnique),
-                              m_registry.get());
+    auto s = new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique),
+                                actionId.at(KGlobalAccel::ActionFriendly),
+                                m_registry->nextSerial(),
+                                component->shortcutContext(contextUnique),
+                                m_registry.get());
+    if (auto it = m_queuedDefaultTriggers.find({componentUnique, s->uniqueName()}); it != m_queuedDefaultTriggers.end()) {
+        sortAndSetDefaultTriggers(s, it.value());
+        m_queuedDefaultTriggers.erase(it);
+    }
+    return s;
 }
 
 Q_DECLARE_METATYPE(QStringList)
@@ -161,6 +190,7 @@ KGlobalAccelD::KGlobalAccelD()
     , d(new KGlobalAccelDPrivate(this))
 {
     d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
+    connect(d->m_registry.get(), &GlobalShortcutsRegistry::triggerActive, this, &KGlobalAccelD::triggerActive);
 }
 
 bool KGlobalAccelD::init()
@@ -215,6 +245,11 @@ bool KGlobalAccelD::axisTriggered(int axis)
 void KGlobalAccelD::resetModifierOnlyState()
 {
     return d->m_registry->resetModifierOnlyState();
+}
+
+bool KGlobalAccelD::triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event)
+{
+    return d->m_registry->triggerEvent(trigger, event);
 }
 
 KGlobalAccelD::~KGlobalAccelD()
@@ -545,6 +580,18 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     d->scheduleWriteSettings();
 
     return shortcut->keys();
+}
+
+void KGlobalAccelD::setDefaultShortcutTriggers(const QString &componentUnique, const QString &shortcutUnique, const QSet<KGlobalShortcutTrigger> &triggers)
+{
+    GlobalShortcut *shortcut = d->findAction(componentUnique, shortcutUnique);
+    if (!shortcut) {
+        // remember the defaults and apply them later during addAction()
+        d->m_queuedDefaultTriggers[{componentUnique, shortcutUnique}] = triggers;
+        return;
+    }
+
+    d->sortAndSetDefaultTriggers(shortcut, triggers);
 }
 
 #if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
