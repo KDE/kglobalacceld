@@ -23,6 +23,7 @@
 class GlobalShortcut;
 class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
+class KGlobalShortcutTrigger;
 class ShortcutsTest;
 
 /**
@@ -67,27 +68,31 @@ public:
     //! Returns the friendly name
     QString friendlyName() const;
 
-    //! Returns the currently active shortcut for key
+    //! Returns the currently active shortcut for \a key.
     GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+
+    //! Returns the currently active shortcut for \a trigger. Equal match only.
+    GlobalShortcut *getShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     //! Returns the shortcut context @p name or nullptr
     GlobalShortcutContext *shortcutContext(const QString &name);
     GlobalShortcutContext const *shortcutContext(const QString &name) const;
 
-    /**
-     * Returns the list of shortcuts (different context) registered with @p
-     * key.
-     */
+    //! Returns the list of shortcuts (different context) registered with \a key.
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+
+    //! Returns the list of shortcuts (different context) registered with \a trigger. Equal match only.
+    QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     //! Returns the shortcut by unique name. Only the active context is
     //! searched.
     GlobalShortcut *getShortcutByName(const QString &uniqueName, const QString &context = QStringLiteral("default")) const;
 
-    /**
-     * Check if @a key is available for component @p component
-     */
-    bool isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const;
+    //! Check if \a key is available for component \a component
+    bool isShortcutKeyAvailable(const QKeySequence &key, const QString &component, const QString &context) const;
+
+    //! Check if \a trigger is available for component \a component
+    bool isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger, const QString &component, const QString &context) const;
 
     //! Load the settings from config group @p config
     virtual void loadSettings(const KConfigGroup &config, const KConfigGroup &state);
@@ -117,16 +122,24 @@ protected:
      * Create a new globalShortcut by its name
      * @param uniqueName internal unique name to identify the shortcut
      * @param friendlyName name for the shortcut to be presented to the user
-     * @param shortcutString string representation of the shortcut, such as "CTRL+S"
-     * @param defaultShortcutString string representation of the default shortcut,
+     * @param shortcutKeysString string representation of the shortcut, such as "CTRL+S"
+     * @param defaultShortcutKeysString string representation of the default shortcut,
      *                   such as "CTRL+S", when the user choses to reset to default
      *                   the keyboard shortcut will return to this one.
      */
     GlobalShortcut *registerShortcut(const QString &uniqueName,
                                      const QString &friendlyName,
-                                     const QString &shortcutString,
-                                     const QString &defaultShortcutString,
+                                     const QString &shortcutKeysString,
+                                     const QString &defaultShortcutKeysString,
                                      uint64_t serial = 0);
+
+    /**
+     * Construct and assign a list of triggers to the given \a shortcut.
+     *
+     * Calls shortcut->setTriggers() and optionally shortcut->setDefaultTriggers() with the
+     * given \a triggerType and the list of triggers constructed from \a triggerParamStrings.
+     */
+    void loadTriggers(GlobalShortcut *shortcut, const QString &triggerType, const QStringList &triggerParamStrings, bool isDefault);
 
     /**
      * Assign two already registered actions to each other as inverse actions.

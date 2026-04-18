@@ -16,6 +16,7 @@
 
 class Component;
 class GlobalShortcut;
+class KGlobalShortcutTrigger;
 
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
@@ -48,16 +49,23 @@ public:
     Component *component();
     Component const *component() const;
 
-    //! Get shortcut for @p key or nullptr
+    //! Get shortcut for \a key or nullptr
     GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+
+    //! Get shortcut for \a trigger or nullptr
+    GlobalShortcut *getShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     //! Remove @p shortcut from the context. The shortcut is not deleted.
     GlobalShortcut *takeShortcut(GlobalShortcut *shortcut);
 
-    // Returns true if key is not used by any global shortcuts in this context,
-    // otherwise returns false
-    bool isShortcutAvailable(const QKeySequence &key) const;
+    //! Returns true if \a key is not used by any global shortcuts in this context,
+    //! otherwise returns false
+    bool isShortcutKeyAvailable(const QKeySequence &key) const;
+
+    //! Returns true if \a trigger is not used by any global shortcuts in this context,
+    //! otherwise returns false
+    bool isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger) const;
 
 private:
     friend class Component;

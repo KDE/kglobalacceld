@@ -12,6 +12,7 @@
 #include <QObject>
 
 #include "kglobalacceld_export.h"
+#include "kglobalshortcuttrigger.h"
 #include "shortcutkeystate.h"
 
 class GlobalShortcutsRegistry;
@@ -43,6 +44,13 @@ public:
      * \return true if successful, otherwise false.
      */
     virtual bool grabKey(int key, bool grab) = 0;
+
+    virtual bool setTriggerActive(const KGlobalShortcutTrigger &,
+                                  bool active,
+                                  const QString &componentName,
+                                  const QString &actionId,
+                                  const QString &componentFriendlyName,
+                                  const QString &actionFriendlyName);
 
     void setRegistry(GlobalShortcutsRegistry *registry);
 

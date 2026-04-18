@@ -7,7 +7,9 @@
 */
 
 #include "kserviceactioncomponent.h"
+
 #include "globalshortcutcontext.h"
+#include "kglobalshortcuttrigger.h"
 #include "logging.h"
 
 #include <QFileInfo>
@@ -21,6 +23,13 @@
 #include <KStartupInfo>
 #include <private/qtx11extras_p.h>
 #endif
+
+using namespace Qt::StringLiterals;
+
+namespace
+{
+constexpr QLatin1StringView CurrentTriggerSuffix = "|Current"_L1;
+}
 
 class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
 {
@@ -122,6 +131,9 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
             contextStateGroup = KConfigGroup(&state, context->uniqueName());
         }
 
+        KConfigGroup triggersGroup(&contextGroup, "$Triggers"_L1);
+        QStringList triggerParamStrings;
+
         for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
             // We do not write fresh shortcuts.
             // We do not write session shortcuts
@@ -136,6 +148,22 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
             }
 
             contextStateGroup.writeEntry(shortcut->uniqueName(), shortcut->serial());
+
+            KConfigGroup actionTriggersGroup(&triggersGroup, shortcut->uniqueName());
+            const auto triggerTypes = shortcut->triggerTypes();
+
+            for (const QString &triggerType : triggerTypes) {
+                const auto defaultTriggers = shortcut->defaultTriggers(triggerType);
+
+                if (shortcut->hasOverrideTriggerAssignments(triggerType)) {
+                    triggerParamStrings.clear();
+                    const auto triggers = shortcut->triggers(triggerType);
+                    for (const KGlobalShortcutTrigger &trigger : triggers) {
+                        triggerParamStrings.append(trigger.paramString());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + CurrentTriggerSuffix, triggerParamStrings);
+                }
+            }
         }
     }
 }
@@ -173,6 +201,10 @@ void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup, cons
         GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, defaultShortcutString, serial);
         shortcut->setIsPresent(true);
     }
+
+    // Default triggers could be loaded here, but applications and services should not define
+    // their own gestures. That's the responsibility of the KGlobalAccelD host (e.g. KWin), which
+    // would call KGlobalAccelD::setDefaultShortcutTriggers() privately.
 }
 
 #include "moc_kserviceactioncomponent.cpp"

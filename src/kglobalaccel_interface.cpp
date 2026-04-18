@@ -26,6 +26,11 @@ KGlobalAccelInterface::KGlobalAccelInterface(QObject *owner)
 
 KGlobalAccelInterface::~KGlobalAccelInterface() = default;
 
+bool KGlobalAccelInterface::setTriggerActive(const KGlobalShortcutTrigger &, bool, const QString &, const QString &, const QString &, const QString &)
+{
+    return false;
+}
+
 void KGlobalAccelInterface::setRegistry(GlobalShortcutsRegistry *registry)
 {
     setParent(registry);

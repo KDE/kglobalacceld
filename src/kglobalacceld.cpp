@@ -14,6 +14,7 @@
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
 
@@ -63,6 +64,10 @@ struct KGlobalAccelDPrivate {
     GlobalShortcut *addAction(const QStringList &actionId);
     Component *component(const QStringList &actionId) const;
 
+    void sortAndSetDefaultTriggers(GlobalShortcut *shortcut, const QSet<KGlobalShortcutTrigger> &triggers);
+
+    void scheduleWriteSettings();
+
     void splitComponent(QString &component, QString &context) const
     {
         context = QStringLiteral("default");
@@ -81,6 +86,9 @@ struct KGlobalAccelDPrivate {
     KGlobalAccelD *q;
 
     std::unique_ptr<GlobalShortcutsRegistry> m_registry = nullptr;
+
+    using ComponentActionPair = QPair<QString, QString>;
+    QHash<ComponentActionPair, QSet<KGlobalShortcutTrigger>> m_queuedDefaultTriggers;
 };
 
 GlobalShortcut *KGlobalAccelDPrivate::findAction(const QStringList &actionId) const
@@ -154,6 +162,24 @@ KGlobalAccelInterface * ::KGlobalAccelD::interface() const
     return d->m_registry->interface();
 }
 
+void KGlobalAccelDPrivate::sortAndSetDefaultTriggers(GlobalShortcut *shortcut, const QSet<KGlobalShortcutTrigger> &triggers)
+{
+    QHash<QString, QSet<KGlobalShortcutTrigger>> triggersByType;
+    for (const KGlobalShortcutTrigger &trigger : triggers) {
+        triggersByType[trigger.type()].insert(trigger);
+    }
+
+    for (const auto &[triggerType, typeTriggers] : triggersByType.asKeyValueRange()) {
+        if (shortcut->defaultTriggers(triggerType) != typeTriggers) {
+            shortcut->setDefaultTriggers(triggerType, typeTriggers);
+            scheduleWriteSettings();
+
+            // also update assigned triggers if no overrides have been assigned
+            shortcut->setTriggers(triggerType, typeTriggers, GlobalShortcut::FromDefaults);
+        }
+    }
+}
+
 GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 {
     Q_ASSERT(actionId.size() >= 4);
@@ -178,11 +204,16 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
     Q_ASSERT(!component->getShortcutByName(componentUnique, contextUnique));
 
-    return new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique),
-                              actionId.at(KGlobalAccel::ActionFriendly),
-                              m_registry->nextSerial(),
-                              component->shortcutContext(contextUnique),
-                              m_registry.get());
+    auto s = new GlobalShortcut(actionId.at(KGlobalAccel::ActionUnique),
+                                actionId.at(KGlobalAccel::ActionFriendly),
+                                m_registry->nextSerial(),
+                                component->shortcutContext(contextUnique),
+                                m_registry.get());
+    if (auto it = m_queuedDefaultTriggers.find({componentUnique, s->uniqueName()}); it != m_queuedDefaultTriggers.end()) {
+        sortAndSetDefaultTriggers(s, it.value());
+        m_queuedDefaultTriggers.erase(it);
+    }
+    return s;
 }
 
 Q_DECLARE_METATYPE(QStringList)
@@ -207,7 +238,9 @@ bool KGlobalAccelD::init()
 
     d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
     Q_ASSERT(d->m_registry);
-    connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, &KGlobalAccelD::scheduleWriteSettings);
+    connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, [this] {
+        d->scheduleWriteSettings();
+    });
 
     d->writeoutTimer.setSingleShot(true);
     connect(&d->writeoutTimer, &QTimer::timeout, d->m_registry.get(), &GlobalShortcutsRegistry::writeSettings);
@@ -383,12 +416,12 @@ void KGlobalAccelD::doRegister(const QStringList &actionId)
         // a switch of locales is one common reason for a changing friendlyName
         if ((!actionId[KGlobalAccel::ActionFriendly].isEmpty()) && shortcut->friendlyName() != actionId[KGlobalAccel::ActionFriendly]) {
             shortcut->setFriendlyName(actionId[KGlobalAccel::ActionFriendly]);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
         if ((!actionId[KGlobalAccel::ComponentFriendly].isEmpty())
             && shortcut->context()->component()->friendlyName() != actionId[KGlobalAccel::ComponentFriendly]) {
             shortcut->context()->component()->setFriendlyName(actionId[KGlobalAccel::ComponentFriendly]);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
     }
 }
@@ -441,7 +474,7 @@ bool KGlobalAccelD::globalShortcutAvailable(const QKeySequence &shortcut, const 
     QString realComponent = component;
     QString context;
     d->splitComponent(realComponent, context);
-    return d->m_registry->isShortcutAvailable(shortcut, realComponent, context);
+    return d->m_registry->isShortcutKeyAvailable(shortcut, realComponent, context);
 }
 
 void KGlobalAccelD::setInactive(const QStringList &actionId)
@@ -462,7 +495,7 @@ bool KGlobalAccelD::unregister(const QString &componentUnique, const QString &sh
     GlobalShortcut *shortcut = d->findAction(componentUnique, shortcutUnique);
     if (shortcut) {
         shortcut->unRegister();
-        scheduleWriteSettings();
+        d->scheduleWriteSettings();
     }
 
     return shortcut;
@@ -477,7 +510,7 @@ void KGlobalAccelD::unRegister(const QStringList &actionId)
     GlobalShortcut *shortcut = d->findAction(actionId);
     if (shortcut) {
         shortcut->unRegister();
-        scheduleWriteSettings();
+        d->scheduleWriteSettings();
     }
 }
 #endif
@@ -517,7 +550,7 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     if (isDefault) {
         if (shortcut->defaultKeys() != keys) {
             shortcut->setDefaultKeys(keys);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
         return keys; // doesn't matter
     }
@@ -545,9 +578,21 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     //  which can never be fresh if created the usual way
     shortcut->setIsFresh(false);
 
-    scheduleWriteSettings();
+    d->scheduleWriteSettings();
 
     return shortcut->keys();
+}
+
+void KGlobalAccelD::setDefaultShortcutTriggers(const QString &componentUnique, const QString &shortcutUnique, const QSet<KGlobalShortcutTrigger> &triggers)
+{
+    GlobalShortcut *shortcut = d->findAction(componentUnique, shortcutUnique);
+    if (!shortcut) {
+        // remember the defaults and apply them later during addAction()
+        d->m_queuedDefaultTriggers[{componentUnique, shortcutUnique}] = triggers;
+        return;
+    }
+
+    d->sortAndSetDefaultTriggers(shortcut, triggers);
 }
 
 #if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
@@ -602,14 +647,14 @@ bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,
 
     forwardShortcut->setInverseActionUniqueName(backwardActionUnique);
     backwardShortcut->setInverseActionUniqueName(forwardActionUnique);
-    scheduleWriteSettings();
+    d->scheduleWriteSettings();
     return true;
 }
 
-void KGlobalAccelD::scheduleWriteSettings() const
+void KGlobalAccelDPrivate::scheduleWriteSettings()
 {
-    if (!d->writeoutTimer.isActive()) {
-        d->writeoutTimer.start(500);
+    if (!writeoutTimer.isActive()) {
+        writeoutTimer.start(500);
     }
 }
 

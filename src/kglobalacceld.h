@@ -55,6 +55,12 @@ public:
 
     KGlobalAccelInterface *interface() const;
 
+    /*!
+     * To be called by KGlobalAccelD owner (e.g. KWin) to set defaults for its own and external gestures.
+     * \since 6.7
+     */
+    void setDefaultShortcutTriggers(const QString &componentUnique, const QString &shortcutUnique, const QSet<KGlobalShortcutTrigger> &triggers);
+
 public Q_SLOTS:
 
     /**
@@ -198,8 +204,6 @@ Q_SIGNALS:
     Q_SCRIPTABLE void yourShortcutsChanged(const QStringList &actionId, const QSet<QKeySequence> &newKeys);
 
 private:
-    void scheduleWriteSettings() const;
-
     KGlobalAccelDPrivate *const d;
 };
 
