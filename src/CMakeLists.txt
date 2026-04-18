@@ -1,6 +1,7 @@
 set(kglobalaccelprivate_SRCS
     kglobalacceld.cpp
     kglobalaccel_interface.cpp
+    kglobalshortcuttrigger.cpp
     kserviceactioncomponent.cpp
     component.cpp
     globalshortcut.cpp
@@ -82,6 +83,7 @@ install(FILES
     shortcutkeystate.h
     kglobalacceld.h
     kglobalaccel_interface.h
+    kglobalshortcuttrigger.h
     DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
 

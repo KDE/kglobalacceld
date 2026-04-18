@@ -11,6 +11,7 @@
 #include "component.h"
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
+#include "kglobalshortcuttrigger.h"
 #include "logging.h"
 
 #include <QKeySequence>
@@ -124,6 +125,11 @@ QList<QKeySequence> GlobalShortcut::keys() const
     return _keys;
 }
 
+QList<KGlobalShortcutTrigger> GlobalShortcut::triggers(const QString &triggerType) const
+{
+    return _triggers.value(triggerType, TriggerLists{}).assigned;
+}
+
 void GlobalShortcut::setKeys(const QList<QKeySequence> &newKeys)
 {
     bool active = _isRegistered;
@@ -157,14 +163,67 @@ void GlobalShortcut::setKeys(const QList<QKeySequence> &newKeys)
     }
 }
 
+void GlobalShortcut::setTriggers(const QString &triggerType, const QList<KGlobalShortcutTrigger> &newTriggers)
+{
+    bool active = _isRegistered;
+    if (active) {
+        setInactive();
+    }
+
+    QList<KGlobalShortcutTrigger> &triggersRef = _triggers[triggerType].assigned;
+    triggersRef.clear();
+    triggersRef.reserve(newTriggers.size());
+
+    for (const KGlobalShortcutTrigger &trigger : newTriggers) {
+        if (trigger.isEmpty()) {
+            qCDebug(KGLOBALACCELD) << _uniqueName << "skipping because trigger is empty";
+            continue;
+        }
+        if (_registry->getShortcutByTrigger(trigger)) { // no shadowing check for triggers at this time
+            qCDebug(KGLOBALACCELD) << _uniqueName << "skipping because trigger" << trigger.type() << trigger.serializedTriggerParams() << "is already taken";
+            continue;
+        }
+        if (trigger.type() != triggerType) {
+            qCWarning(KGLOBALACCELD) << _uniqueName << "skipping because trigger type" << trigger.type() << "is not" << triggerType;
+            continue;
+        }
+        triggersRef.append(trigger);
+    }
+
+    if (active) {
+        setActive();
+    }
+}
+
 QList<QKeySequence> GlobalShortcut::defaultKeys() const
 {
     return _defaultKeys;
 }
 
+QStringList GlobalShortcut::triggerTypes() const
+{
+    return _triggers.keys();
+}
+
+QList<KGlobalShortcutTrigger> GlobalShortcut::defaultTriggers(const QString &triggerType) const
+{
+    return _triggers.value(triggerType, TriggerLists{}).defaults;
+}
+
 void GlobalShortcut::setDefaultKeys(const QList<QKeySequence> &newKeys)
 {
     _defaultKeys = newKeys;
+}
+
+void GlobalShortcut::setDefaultTriggers(const QString &triggerType, const QList<KGlobalShortcutTrigger> &newTriggers)
+{
+    for (const auto &trigger : newTriggers) {
+        if (trigger.type() != triggerType) {
+            qCWarning(KGLOBALACCELD) << _uniqueName << "skipping default assignment because trigger type" << trigger.type() << "is not" << triggerType;
+            return;
+        }
+    }
+    _triggers[triggerType].defaults = newTriggers;
 }
 
 QString GlobalShortcut::inverseActionUniqueName() const
@@ -197,6 +256,14 @@ void GlobalShortcut::setActive()
         }
     }
 
+    for (const auto &triggerLists : std::as_const(_triggers)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!trigger.isEmpty() && !_registry->registerTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to register " << trigger.type() << trigger.serializedTriggerParams();
+            }
+        }
+    }
+
     _isRegistered = true;
 }
 
@@ -210,6 +277,14 @@ void GlobalShortcut::setInactive()
     for (const QKeySequence &key : std::as_const(_keys)) {
         if (!key.isEmpty() && !_registry->unregisterKey(key, this)) {
             qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << QKeySequence(key).toString();
+        }
+    }
+
+    for (const auto &triggerLists : std::as_const(_triggers)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!trigger.isEmpty() && !_registry->unregisterTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << trigger.type() << trigger.serializedTriggerParams();
+            }
         }
     }
 

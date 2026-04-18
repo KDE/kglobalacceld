@@ -215,12 +215,27 @@ GlobalShortcut *Component::getShortcutByKey(const QKeySequence &key, KGlobalAcce
     return _current->getShortcutByKey(key, type);
 }
 
+GlobalShortcut *Component::getShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    return _current->getShortcutByTrigger(trigger);
+}
+
 QList<GlobalShortcut *> Component::getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     QList<GlobalShortcut *> rc;
     for (GlobalShortcutContext *context : std::as_const(_contexts)) {
-        GlobalShortcut *sc = context->getShortcutByKey(key, type);
-        if (sc) {
+        if (GlobalShortcut *sc = context->getShortcutByKey(key, type); sc) {
+            rc.append(sc);
+        }
+    }
+    return rc;
+}
+
+QList<GlobalShortcut *> Component::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    QList<GlobalShortcut *> rc;
+    for (GlobalShortcutContext *context : std::as_const(_contexts)) {
+        if (GlobalShortcut *sc = context->getShortcutByTrigger(trigger); sc) {
             rc.append(sc);
         }
     }
@@ -250,18 +265,36 @@ bool Component::isActive() const
     return false;
 }
 
-bool Component::isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const
+bool Component::isShortcutKeyAvailable(const QKeySequence &key, const QString &component, const QString &context) const
 {
     qCDebug(KGLOBALACCELD) << key.toString() << component;
 
     // if this component asks for the key. only check the keys in the same
     // context
     if (component == uniqueName()) {
-        return shortcutContext(context)->isShortcutAvailable(key);
+        return shortcutContext(context)->isShortcutKeyAvailable(key);
     } else {
         for (auto it = _contexts.cbegin(), endIt = _contexts.cend(); it != endIt; ++it) {
             const GlobalShortcutContext *ctx = it.value();
-            if (!ctx->isShortcutAvailable(key)) {
+            if (!ctx->isShortcutKeyAvailable(key)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool Component::isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger, const QString &component, const QString &context) const
+{
+    qCDebug(KGLOBALACCELD) << trigger.type() << trigger.serializedTriggerParams() << component;
+
+    // if this component asks for the trigger, only check the triggers in the same context
+    if (component == uniqueName()) {
+        return shortcutContext(context)->isShortcutTriggerAvailable(trigger);
+    } else {
+        for (auto it = _contexts.cbegin(), endIt = _contexts.cend(); it != endIt; ++it) {
+            const GlobalShortcutContext *ctx = it.value();
+            if (!ctx->isShortcutTriggerAvailable(trigger)) {
                 return false;
             }
         }
@@ -270,13 +303,13 @@ bool Component::isShortcutAvailable(const QKeySequence &key, const QString &comp
 }
 
 GlobalShortcut *
-Component::registerShortcut(const QString &uniqueName, const QString &friendlyName, const QString &shortcutString, const QString &defaultShortcutString)
+Component::registerShortcut(const QString &uniqueName, const QString &friendlyName, const QString &shortcutKeysString, const QString &defaultShortcutKeysString)
 {
     // The shortcut will register itself with us
     GlobalShortcut *shortcut = new GlobalShortcut(uniqueName, friendlyName, currentContext(), _registry);
 
-    const QList<QKeySequence> keys = keysFromString(shortcutString);
-    shortcut->setDefaultKeys(keysFromString(defaultShortcutString));
+    const QList<QKeySequence> keys = keysFromString(shortcutKeysString);
+    shortcut->setDefaultKeys(keysFromString(defaultShortcutKeysString));
     shortcut->setIsFresh(false);
     QList<QKeySequence> newKeys = keys;
     for (const QKeySequence &key : keys) {

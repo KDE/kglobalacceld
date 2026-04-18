@@ -307,7 +307,13 @@ GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
                 _manager->grabKey(key[i].toCombined(), false);
             }
         }
+        const auto triggerIds = _active_triggers.keys();
+        for (const auto &[triggerType, serializedTriggerParams] : triggerIds) {
+            const KGlobalShortcutTrigger trigger(triggerType, serializedTriggerParams);
+            _manager->setTriggerActive(trigger, false, {}, {}, {}, {});
+        }
     }
+    _active_triggers.clear();
     _active_keys.clear();
     _keys_count.clear();
 }
@@ -357,6 +363,7 @@ void GlobalShortcutsRegistry::clear()
 
     // The shortcuts should have deregistered themselves
     Q_ASSERT(_active_keys.isEmpty());
+    Q_ASSERT(_active_triggers.isEmpty());
 }
 
 QDBusObjectPath GlobalShortcutsRegistry::dbusPath() const
@@ -380,8 +387,7 @@ Component *GlobalShortcutsRegistry::getComponent(const QString &uniqueName)
 GlobalShortcut *GlobalShortcutsRegistry::getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     for (const ComponentPtr &component : m_components) {
-        GlobalShortcut *rc = component->getShortcutByKey(key, type);
-        if (rc) {
+        if (GlobalShortcut *rc = component->getShortcutByKey(key, type); rc) {
             return rc;
         }
     }
@@ -392,18 +398,45 @@ QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByKey(const QKeySeq
 {
     QList<GlobalShortcut *> rc;
     for (const ComponentPtr &component : m_components) {
-        rc = component->getShortcutsByKey(key, type);
-        if (!rc.isEmpty()) {
+        if (rc = component->getShortcutsByKey(key, type); !rc.isEmpty()) {
             return rc;
         }
     }
     return {};
 }
 
-bool GlobalShortcutsRegistry::isShortcutAvailable(const QKeySequence &shortcut, const QString &componentName, const QString &contextName) const
+GlobalShortcut *GlobalShortcutsRegistry::getShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const
 {
-    return std::all_of(m_components.cbegin(), m_components.cend(), [&shortcut, &componentName, &contextName](const ComponentPtr &component) {
-        return component->isShortcutAvailable(shortcut, componentName, contextName);
+    for (const ComponentPtr &component : m_components) {
+        if (GlobalShortcut *rc = component->getShortcutByTrigger(trigger); rc) {
+            return rc;
+        }
+    }
+    return nullptr;
+}
+
+QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    QList<GlobalShortcut *> rc;
+    for (const ComponentPtr &component : m_components) {
+        if (rc = component->getShortcutsByTrigger(trigger); !rc.isEmpty()) {
+            return rc;
+        }
+    }
+    return {};
+}
+
+bool GlobalShortcutsRegistry::isShortcutKeyAvailable(const QKeySequence &shortcut, const QString &componentName, const QString &contextName) const
+{
+    return std::all_of(m_components.cbegin(), m_components.cend(), [&shortcut, &componentName, &contextName](const ComponentPtr &component) -> bool {
+        return component->isShortcutKeyAvailable(shortcut, componentName, contextName);
+    });
+}
+
+bool GlobalShortcutsRegistry::isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger, const QString &componentName, const QString &contextName) const
+{
+    return std::all_of(m_components.cbegin(), m_components.cend(), [&trigger, &componentName, &contextName](const ComponentPtr &component) -> bool {
+        return component->isShortcutTriggerAvailable(trigger, componentName, contextName);
     });
 }
 
@@ -870,6 +903,39 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
     return true;
 }
 
+bool GlobalShortcutsRegistry::registerTrigger(const KGlobalShortcutTrigger &trigger, GlobalShortcut *shortcut)
+{
+    if (!_manager) {
+        return false;
+    }
+
+    const auto triggerId = qMakePair(trigger.type(), trigger.serializedTriggerParams());
+
+    if (trigger.isEmpty()) {
+        qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Attempt to register empty trigger.";
+        return false;
+    } else if (_active_triggers.value(triggerId)) {
+        qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Trigger" << triggerId << "already taken by" << _active_triggers.value(triggerId)->uniqueName();
+        return false;
+    }
+
+    qCDebug(KGLOBALACCELD) << "Registering trigger" << triggerId << "for" << shortcut->context()->component()->uniqueName() << ":" << shortcut->uniqueName();
+
+    if (!_manager->setTriggerActive(trigger,
+                                    true,
+                                    shortcut->context()->component()->uniqueName(),
+                                    shortcut->uniqueName(),
+                                    shortcut->context()->component()->friendlyName(),
+                                    shortcut->friendlyName())) {
+        qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Attempt to register unsupported trigger" << triggerId;
+        return false;
+    }
+
+    _active_triggers.insert(triggerId, shortcut);
+
+    return true;
+}
+
 void GlobalShortcutsRegistry::setDBusPath(const QDBusObjectPath &path)
 {
     _dbusPath = path;
@@ -917,6 +983,28 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
 
     _active_keys.remove(key);
     return true;
+}
+
+bool GlobalShortcutsRegistry::unregisterTrigger(const KGlobalShortcutTrigger &trigger, GlobalShortcut *shortcut)
+{
+    if (!_manager) {
+        return false;
+    }
+
+    const auto triggerId = qMakePair(trigger.type(), trigger.serializedTriggerParams());
+
+    if (_active_triggers.value(triggerId) != shortcut) {
+        // The shortcut doesn't own the trigger or the trigger isn't grabbed
+        return false;
+    }
+
+    if (m_lastShortcut && shortcut == m_lastShortcut) {
+        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
+        m_lastShortcut = nullptr;
+    }
+
+    _active_triggers.remove(triggerId);
+    return false;
 }
 
 void GlobalShortcutsRegistry::writeSettings()

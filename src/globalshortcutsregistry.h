@@ -30,6 +30,7 @@
 class Component;
 class GlobalShortcut;
 class KGlobalAccelInterface;
+class KGlobalShortcutTrigger;
 
 /**
  * Global Shortcut Registry.
@@ -89,36 +90,73 @@ public:
      */
     Component *getComponent(const QString &uniqueName);
 
-    /**
-     * Get the shortcut corresponding to key. Active and inactive shortcuts
+    /*!
+     * Get the shortcut corresponding to \a key. Active and inactive shortcuts
      * are considered. But if the matching application uses contexts only one
      * shortcut is returned.
      *
-     * @see getShortcutsByKey(int key)
+     * \sa getShortcutsByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutByTrigger(const KGlobalShortcutTrigger &)
+     * \sa getShortcutsByTrigger(const KGlobalShortcutTrigger &)
      */
     GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type = KGlobalAccel::MatchType::Equal) const;
 
-    /**
-     * Get the shortcuts corresponding to key. Active and inactive shortcuts
+    /*!
+     * Get the shortcuts corresponding to \a key. Active and inactive shortcuts
      * are considered.
      *
-     * @see getShortcutsByKey(int key)
+     * \sa getShortcutByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutByTrigger(const KGlobalShortcutTrigger &)
+     * \sa getShortcutsByTrigger(const KGlobalShortcutTrigger &)
      */
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
 
+    /*!
+     * Get the shortcut corresponding to \a trigger. Active and inactive triggers
+     * are considered. But if the matching application uses contexts, only one
+     * shortcut is returned.
+     *
+     * \sa getShortcutByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutsByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutsByTrigger(const KGlobalShortcutTrigger &)
+     */
+    GlobalShortcut *getShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const;
+
     /**
-     * Checks if @p shortcut is available for @p component.
+     * Get the shortcuts corresponding to \a trigger. Active and inactive shortcuts
+     * are considered.
+     *
+     * \sa getShortcutByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutsByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     * \sa getShortcutByTrigger(const KGlobalShortcutTrigger &)
+     */
+    QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
+
+    /*!
+     * Checks if \a shortcut is available for \a component.
      *
      * It is available if not used by another component in any context or used
-     * by @p component only in not active contexts.
+     * by \a component only in not active contexts.
      */
-    bool isShortcutAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
+    bool isShortcutKeyAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
+
+    /*!
+     * Checks if \a trigger is available for \a component.
+     *
+     * It is available if not used by another component in any context or used
+     * by \a component only in not active contexts.
+     */
+    bool isShortcutTriggerAvailable(const KGlobalShortcutTrigger &trigger, const QString &component, const QString &context) const;
 
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
+
+    bool registerTrigger(const KGlobalShortcutTrigger &key, GlobalShortcut *shortcut);
 
     void setDBusPath(const QDBusObjectPath &path);
 
     bool unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut);
+
+    bool unregisterTrigger(const KGlobalShortcutTrigger &key, GlobalShortcut *shortcut);
 
     KGlobalAccelInterface *interface() const;
 
@@ -166,6 +204,9 @@ private:
     QHash<QKeySequence, GlobalShortcut *> _active_keys;
     QKeySequence _active_sequence;
     QHash<int, int> _keys_count;
+
+    using TriggerId = QPair<QString, QString>; // trigger.type(), .serializedTriggerParams()
+    QHash<TriggerId, GlobalShortcut *> _active_triggers;
 
     Qt::KeyboardModifiers m_currentModifiers;
     // State machine:

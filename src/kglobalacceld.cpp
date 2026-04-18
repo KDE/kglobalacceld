@@ -415,7 +415,7 @@ bool KGlobalAccelD::globalShortcutAvailable(const QKeySequence &shortcut, const 
     QString realComponent = component;
     QString context;
     d->splitComponent(realComponent, context);
-    return d->m_registry->isShortcutAvailable(shortcut, realComponent, context);
+    return d->m_registry->isShortcutKeyAvailable(shortcut, realComponent, context);
 }
 
 void KGlobalAccelD::setInactive(const QStringList &actionId)
