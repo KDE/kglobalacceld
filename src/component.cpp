@@ -21,6 +21,12 @@
 
 using namespace Qt::StringLiterals;
 
+namespace
+{
+constexpr QLatin1StringView CurrentTriggerSuffix = "|Current"_L1;
+constexpr QLatin1StringView DefaultTriggerSuffix = "|Default"_L1;
+}
+
 QList<QKeySequence> Component::keysFromString(const QString &str)
 {
     QList<QKeySequence> ret;
@@ -354,6 +360,21 @@ void Component::loadInverseAction(const QString &aUniqueName, const QStringList 
     b->setInverseAction(aUniqueName, isInverseActionCouplingMandatory);
 }
 
+void Component::loadTriggers(GlobalShortcut *shortcut, const QString &triggerType, const QStringList &triggerParamStrings, bool isDefault)
+{
+    QList<KGlobalShortcutTrigger> triggers;
+    triggers.reserve(triggerParamStrings.size());
+
+    for (const QString &serializedTriggerParams : triggerParamStrings) {
+        triggers.emplace_back(triggerType, serializedTriggerParams);
+    }
+
+    if (isDefault) {
+        shortcut->setDefaultTriggers(triggerType, triggers);
+    }
+    shortcut->setTriggers(triggerType, triggers);
+}
+
 void Component::loadSettings(const KConfigGroup &configGroup)
 {
     // GlobalShortcutsRegistry::loadSettings handles contexts.
@@ -365,6 +386,31 @@ void Component::loadSettings(const KConfigGroup &configGroup)
         }
 
         registerShortcut(confKey, entry[2], entry[0], entry[1]);
+    }
+
+    const KConfigGroup triggersGroup(&configGroup, "$Triggers"_L1);
+
+    const auto actionTriggersGroups = triggersGroup.groupList();
+    for (const QString &actionUnique : actionTriggersGroups) {
+        GlobalShortcut *shortcut = _current->_actionsMap.value(actionUnique, nullptr);
+        if (!shortcut) {
+            continue;
+        }
+        const KConfigGroup actionTriggersGroup(&triggersGroup, actionUnique);
+        const auto triggerTypeKeys = actionTriggersGroup.keyList();
+
+        for (const QString &confKey : triggerTypeKeys) {
+            if (confKey.endsWith(DefaultTriggerSuffix)) {
+                const QString triggerType = confKey.first(confKey.size() - DefaultTriggerSuffix.size());
+                loadTriggers(shortcut, triggerType, configGroup.readEntry(confKey, QStringList()), true);
+                continue;
+            }
+            if (confKey.endsWith(CurrentTriggerSuffix)) {
+                const QString triggerType = confKey.first(confKey.size() - CurrentTriggerSuffix.size());
+                loadTriggers(shortcut, triggerType, configGroup.readEntry(confKey, QStringList()), false);
+                continue;
+            }
+        }
     }
 
     const KConfigGroup inverseActionGroup(&configGroup, "$InverseAction"_L1);
@@ -432,6 +478,9 @@ void Component::writeSettings(KConfigGroup &configGroup) const
         }
 
         KConfigGroup inverseActionGroup(&contextGroup, "$InverseAction"_L1);
+        KConfigGroup triggersGroup(&contextGroup, "$Triggers"_L1);
+
+        QStringList triggerParamStrings; // avoid reallocating the list for every shortcut with triggers
 
         // qCDebug(KGLOBALACCELD) << "writing group " << _uniqueName << ":" << context->uniqueName();
 
@@ -456,6 +505,32 @@ void Component::writeSettings(KConfigGroup &configGroup) const
                     ? QStringList{shortcut->inverseActionUniqueName()}
                     : QStringList{"Optional"_L1, shortcut->inverseActionUniqueName()};
                 inverseActionGroup.writeEntry(shortcut->uniqueName(), inverseActionEntry);
+            }
+
+            KConfigGroup actionTriggersGroup(&triggersGroup, shortcut->uniqueName());
+            const auto triggerTypes = shortcut->triggerTypes();
+
+            for (const QString &triggerType : triggerTypes) {
+                const auto triggers = shortcut->triggers(triggerType);
+                const auto defaultTriggers = shortcut->defaultTriggers(triggerType);
+
+                // defaults
+                if (!defaultTriggers.isEmpty()) {
+                    triggerParamStrings.clear();
+                    for (const KGlobalShortcutTrigger &trigger : defaultTriggers) {
+                        triggerParamStrings.append(trigger.serializedTriggerParams());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + DefaultTriggerSuffix, triggerParamStrings);
+                }
+
+                // only write trigger assignments that differ from the default
+                if (triggers != defaultTriggers) {
+                    triggerParamStrings.clear();
+                    for (const KGlobalShortcutTrigger &trigger : triggers) {
+                        triggerParamStrings.append(trigger.serializedTriggerParams());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + CurrentTriggerSuffix, triggerParamStrings);
+                }
             }
         }
     }

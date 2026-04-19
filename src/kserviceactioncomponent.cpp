@@ -7,7 +7,9 @@
 */
 
 #include "kserviceactioncomponent.h"
+
 #include "globalshortcutcontext.h"
+#include "kglobalshortcuttrigger.h"
 #include "logging.h"
 
 #include <QFileInfo>
@@ -21,6 +23,13 @@
 #include <KStartupInfo>
 #include <private/qtx11extras_p.h>
 #endif
+
+using namespace Qt::StringLiterals;
+
+namespace
+{
+constexpr QLatin1StringView CurrentTriggerSuffix = "|Current"_L1;
+}
 
 class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
 {
@@ -118,6 +127,10 @@ void KServiceActionComponent::loadFromService(const KConfigGroup &overrideConfig
         const QStringList entry = action.property<QStringList>(QStringLiteral("X-KDE-InverseAction"));
         loadInverseAction(action.name(), entry);
     }
+
+    // Default triggers could be loaded here, but applications and services should not define
+    // their own gestures. That's the responsibility of the KGlobalAccelD host (e.g. KWin), which
+    // would call KGlobalAccelD::setDefaultShortcutTriggers() privately.
 }
 
 bool KServiceActionComponent::cleanUp()
@@ -147,6 +160,9 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config) const
             contextGroup = KConfigGroup(&config, context->uniqueName());
         }
 
+        KConfigGroup triggersGroup(&contextGroup, "$Triggers"_L1);
+        QStringList triggerParamStrings;
+
         for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
             // We do not write fresh shortcuts.
             // We do not write session shortcuts
@@ -158,6 +174,22 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config) const
                 contextGroup.writeEntry(shortcut->uniqueName(), stringFromKeys(shortcut->keys()));
             } else {
                 contextGroup.revertToDefault(shortcut->uniqueName());
+            }
+
+            KConfigGroup actionTriggersGroup(&triggersGroup, shortcut->uniqueName());
+            const auto triggerTypes = shortcut->triggerTypes();
+
+            for (const QString &triggerType : triggerTypes) {
+                const auto triggers = shortcut->triggers(triggerType);
+                const auto defaultTriggers = shortcut->defaultTriggers(triggerType);
+
+                if (triggers != defaultTriggers) {
+                    triggerParamStrings.clear();
+                    for (const KGlobalShortcutTrigger &trigger : triggers) {
+                        triggerParamStrings.append(trigger.serializedTriggerParams());
+                    }
+                    actionTriggersGroup.writeEntry(triggerType + CurrentTriggerSuffix, triggerParamStrings);
+                }
             }
         }
     }

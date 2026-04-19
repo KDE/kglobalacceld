@@ -14,6 +14,7 @@
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
 
@@ -522,6 +523,26 @@ QList<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, 
     scheduleWriteSettings();
 
     return shortcut->keys();
+}
+
+void KGlobalAccelD::setDefaultShortcutTriggers(const QString &componentUnique, const QString &shortcutUnique, const QList<KGlobalShortcutTrigger> &triggers)
+{
+    GlobalShortcut *shortcut = d->findAction(componentUnique, shortcutUnique);
+    if (!shortcut) {
+        return;
+    }
+
+    QHash<QString, QList<KGlobalShortcutTrigger>> triggersByType;
+    for (const KGlobalShortcutTrigger &trigger : triggers) {
+        triggersByType[trigger.type()].append(trigger);
+    }
+
+    for (const auto &[triggerType, typeTriggers] : triggersByType.asKeyValueRange()) {
+        if (shortcut->defaultTriggers(triggerType) != typeTriggers) {
+            shortcut->setDefaultTriggers(triggerType, typeTriggers);
+            scheduleWriteSettings();
+        }
+    }
 }
 
 #if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(5, 90)
