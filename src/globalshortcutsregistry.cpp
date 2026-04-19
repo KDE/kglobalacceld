@@ -595,11 +595,6 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
     // shortcut is found, reset active sequence
     _active_sequence = QKeySequence();
 
-    QStringList data(shortcut->context()->component()->uniqueName());
-    data.append(shortcut->uniqueName());
-    data.append(shortcut->context()->component()->friendlyName());
-    data.append(shortcut->friendlyName());
-
     if (m_lastShortcut && m_lastShortcut != shortcut) {
         m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
     }
