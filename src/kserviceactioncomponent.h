@@ -10,9 +10,8 @@
 
 #include "component.h"
 
+#include <KConfigGroup>
 #include <KService>
-
-#include <memory>
 
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
@@ -24,7 +23,7 @@ class KServiceActionComponent : public Component
 public:
     ~KServiceActionComponent() override;
 
-    void loadFromService();
+    void loadFromService(const KConfigGroup &overrideConfigGroup = KConfigGroup());
     void emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state) override;
     void writeSettings(KConfigGroup &config) const override;
     void loadSettings(const KConfigGroup &config) override;

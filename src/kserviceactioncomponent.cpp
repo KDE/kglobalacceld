@@ -91,7 +91,7 @@ void KServiceActionComponent::emitGlobalShortcutEvent(const GlobalShortcut &shor
     job->start();
 }
 
-void KServiceActionComponent::loadFromService()
+void KServiceActionComponent::loadFromService(const KConfigGroup &overrideConfigGroup)
 {
     const QString type = m_service->property<QString>(QStringLiteral("X-KDE-GlobalShortcutType"));
 
@@ -99,15 +99,17 @@ void KServiceActionComponent::loadFromService()
     // For applications add a lauch shortcut
     // If no type is set assume Application
     if (type.isEmpty() || type == QLatin1String("Application")) {
-        const QString shortcutString = m_service->property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).join(QLatin1Char('\t'));
-        GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, shortcutString);
+        const QString defaultShortcutString = m_service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).replace(QLatin1Char(','), QLatin1Char('\t'));
+        const QString shortcutString = overrideConfigGroup.readEntry("_launch", defaultShortcutString);
+        GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, defaultShortcutString);
         shortcut->setIsPresent(true);
     }
 
     const auto lstActions = m_service->actions();
     for (const KServiceAction &action : lstActions) {
-        const QString shortcutString = action.property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).join(QLatin1Char('\t'));
-        GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, shortcutString);
+        const QString defaultShortcutString = action.property<QStringList>(QStringLiteral("X-KDE-Shortcuts")).join(QLatin1Char('\t'));
+        const QString shortcutString = overrideConfigGroup.readEntry(action.name(), defaultShortcutString);
+        GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString);
         shortcut->setIsPresent(true);
     }
 }
@@ -157,27 +159,7 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config) const
 
 void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup)
 {
-    // Action shortcuts
-    const auto actions = m_service->actions();
-    for (const KServiceAction &action : actions) {
-        const QString defaultShortcutString = action.property<QString>(QStringLiteral("X-KDE-Shortcuts")).replace(QLatin1Char(','), QLatin1Char('\t'));
-        const QString shortcutString = configGroup.readEntry(action.name(), defaultShortcutString);
-
-        GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString);
-        shortcut->setIsPresent(true);
-    }
-
-    const QString type = m_service->property<QString>(QStringLiteral("X-KDE-GlobalShortcutType"));
-
-    // Type can be Application or Service
-    // For applications add a lauch shortcut
-    // If no type is set assume Application
-    if (type.isEmpty() || type == QLatin1String("Application")) {
-        const QString defaultShortcutString = m_service->property<QString>(QStringLiteral("X-KDE-Shortcuts")).replace(QLatin1Char(','), QLatin1Char('\t'));
-        const QString shortcutString = configGroup.readEntry("_launch", defaultShortcutString);
-        GlobalShortcut *shortcut = registerShortcut(QStringLiteral("_launch"), m_service->name(), shortcutString, defaultShortcutString);
-        shortcut->setIsPresent(true);
-    }
+    loadFromService(configGroup);
 }
 
 #include "moc_kserviceactioncomponent.cpp"
