@@ -62,6 +62,11 @@ bool KGlobalAccelInterface::axisTriggered(int axis)
     return d->owner->axisTriggered(axis);
 }
 
+bool KGlobalAccelInterface::triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event)
+{
+    return d->owner->triggerEvent(trigger, event);
+}
+
 void KGlobalAccelInterface::resetModifierOnlyState()
 {
     d->owner->resetModifierOnlyState();

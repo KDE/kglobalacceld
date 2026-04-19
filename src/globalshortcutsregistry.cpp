@@ -657,6 +657,45 @@ bool GlobalShortcutsRegistry::axisTriggered(int axis)
     return false;
 }
 
+bool GlobalShortcutsRegistry::triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event)
+{
+    m_state = Normal;
+
+    GlobalShortcut *shortcut = getShortcutByTrigger(trigger);
+
+    qCDebug(KGLOBALACCELD) << "Processed trigger" << trigger.type() << trigger.paramString() << "="
+                           << (shortcut ? shortcut->uniqueName() : "(no shortcut found)"_L1);
+
+    if (!shortcut) {
+        return false;
+    }
+
+    if (m_lastShortcut && m_lastShortcut != shortcut) {
+        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
+    }
+
+    if (event == ShortcutTriggerEvent::Cancelled) {
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Released);
+        m_lastShortcut = nullptr;
+        return true;
+    }
+
+    if (!isShortcutAllowed(shortcut)) {
+        return false;
+    }
+
+    // In the future, we may consider to temporarily disable other shortcuts on ShortcutTriggerEvent::Started
+
+    // Invoke the action
+    if (event == ShortcutTriggerEvent::Triggered) {
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Pressed);
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Released);
+    }
+    m_lastShortcut = nullptr;
+
+    return true;
+}
+
 Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, const QString &friendlyName)
 {
     auto it = findByName(uniqueName);
