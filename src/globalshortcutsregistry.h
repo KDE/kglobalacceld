@@ -198,6 +198,7 @@ private:
     bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);
     bool axisTriggered(int axis);
+    bool triggerEvent(const KGlobalShortcutTrigger &, ShortcutTriggerEvent event);
 
     bool processKey(int keyQt, ShortcutKeyState state);
 

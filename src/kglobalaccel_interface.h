@@ -81,6 +81,15 @@ protected:
      */
     bool axisTriggered(int axis);
     /**
+     * Called by the implementation to inform us about trigger events
+     *
+     * @param trigger the trigger that was recognized
+     * @param event   what happened to the trigger
+     *
+     * @returns @c true if the trigger was handled
+     */
+    bool triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event);
+    /**
      * Called by the implementation to inform us about that the modifier-only state should be reset.
      * Used when we don't want to actually handle the event, but still want to reset the state.
      *
