@@ -21,6 +21,7 @@ private Q_SLOTS:
     void parsesTouchpadPinch();
     void rejectsInvalidTouchpadPinch();
     void parsesTouchscreenPinch();
+    void parsesLineShape();
 };
 
 void TriggerParsingTest::parsesEmptyTrigger()
@@ -179,6 +180,28 @@ void TriggerParsingTest::parsesTouchscreenPinch()
     QVERIFY(pinch != nullptr);
     QCOMPARE(pinch->fingerCount, 4);
     QCOMPARE(pinch->direction, PinchDirection::Contracting);
+}
+
+void TriggerParsingTest::parsesLineShape()
+{
+    const KGlobalShortcutTrigger t1("LineShape"_L1, "(0;0)(0;1)"_L1); // straight line down
+    const KGlobalShortcutTrigger t2(u"LineShape"_s, u"(-0.0;0.5)(0;1)(1;1)(1;-1)"_s);
+
+    QVERIFY(!t1.isEmpty());
+    QVERIFY(!t2.isEmpty());
+
+    QCOMPARE(t1.type(), "LineShape"_L1);
+    QCOMPARE(t2.type(), "LineShape"_L1);
+
+    const LineShapeGesture *lineShape = t1.asLineShapeGesture();
+    const auto p1 = QList<QPointF>{{0, 0}, {0, 1}};
+    QVERIFY(lineShape != nullptr);
+    QCOMPARE(lineShape->points, p1);
+
+    lineShape = t2.asLineShapeGesture();
+    const auto p2 = QList<QPointF>{{0, 0.5}, {0, 1}, {1, 1}, {1, -1}};
+    QVERIFY(lineShape != nullptr);
+    QCOMPARE(lineShape->points, p2);
 }
 
 QTEST_MAIN(TriggerParsingTest)

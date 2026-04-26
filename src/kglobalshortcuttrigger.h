@@ -82,6 +82,13 @@ public:
     PinchDirection direction;
 };
 
+class KGLOBALACCELD_EXPORT LineShapeGesture
+{
+    Q_GADGET
+public:
+    QList<QPointF> points;
+};
+
 } // namespace KGlobalShortcutTriggerTypes
 
 class KGlobalShortcutTriggerPrivate;
@@ -113,6 +120,9 @@ public:
 
     //! Create a touchscreen pinch gesture trigger.
     KGlobalShortcutTrigger(const KGlobalShortcutTriggerTypes::TouchscreenPinchGesture &);
+
+    //! Create a line shape gesture trigger, also known as mouse gesture.
+    KGlobalShortcutTrigger(const KGlobalShortcutTriggerTypes::LineShapeGesture &);
 
     /*!
      * Create a trigger value from a strings that were previously exported via type() and paramString().
@@ -214,6 +224,7 @@ public:
     const KGlobalShortcutTriggerTypes::TouchpadPinchGesture *asTouchpadPinchGesture() const;
     const KGlobalShortcutTriggerTypes::TouchscreenSwipeGesture *asTouchscreenSwipeGesture() const;
     const KGlobalShortcutTriggerTypes::TouchscreenPinchGesture *asTouchscreenPinchGesture() const;
+    const KGlobalShortcutTriggerTypes::LineShapeGesture *asLineShapeGesture() const;
 
     bool operator==(const KGlobalShortcutTrigger &rhs) const;
 
