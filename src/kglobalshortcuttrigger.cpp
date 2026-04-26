@@ -18,6 +18,7 @@ static const QString TouchpadSwipeString = "TouchpadSwipe"_L1;
 static const QString TouchpadPinchString = "TouchpadPinch"_L1;
 static const QString TouchscreenSwipeString = "TouchscreenSwipe"_L1;
 static const QString TouchscreenPinchString = "TouchscreenPinch"_L1;
+static const QString LineShapeString = "LineShape"_L1;
 
 namespace
 {
@@ -49,7 +50,8 @@ public:
                                         TouchpadSwipeGesture,
                                         TouchpadPinchGesture,
                                         TouchscreenSwipeGesture,
-                                        TouchscreenPinchGesture>;
+                                        TouchscreenPinchGesture,
+                                        LineShapeGesture>;
     QString serialized; // triggerType + delimiter character + triggerParamString
     int serializedTriggerTypeLength;
     TriggerVariant variant;
@@ -188,6 +190,11 @@ KGlobalShortcutTrigger::KGlobalShortcutTrigger(const TouchscreenPinchGesture &sc
 {
 }
 
+KGlobalShortcutTrigger::KGlobalShortcutTrigger(const LineShapeGesture &sc)
+    : d(new KGlobalShortcutTriggerPrivate(sc))
+{
+}
+
 const TouchpadSwipeGesture *KGlobalShortcutTrigger::asTouchpadSwipeGesture() const
 {
     d->deserialize();
@@ -210,6 +217,12 @@ const TouchscreenPinchGesture *KGlobalShortcutTrigger::asTouchscreenPinchGesture
 {
     d->deserialize();
     return std::get_if<TouchscreenPinchGesture>(&d->variant);
+}
+
+const LineShapeGesture *KGlobalShortcutTrigger::asLineShapeGesture() const
+{
+    d->deserialize();
+    return std::get_if<LineShapeGesture>(&d->variant);
 }
 
 namespace
@@ -287,6 +300,47 @@ static KGlobalShortcutTriggerPrivate::TriggerVariant parsePinchGestureParams(con
 
     return {PinchGestureClass{.fingerCount = fingerCount, .direction = direction}};
 }
+
+template<>
+QPair<QString, QString> serializeParams(const LineShapeGesture &g)
+{
+    QString serialized;
+    serialized.reserve(g.points.size() * 5); // at least one char each for x, y, point delim, 2 parentheses
+    for (const QPointF &p : g.points) {
+        serialized += '('_L1 % QString::number(p.x()) % ';'_L1 % QString::number(p.y()) % ')'_L1;
+    }
+    return {LineShapeString, serialized};
+}
+
+static KGlobalShortcutTriggerPrivate::TriggerVariant parseLineShapeParams(const QStringView &serialized)
+{
+    // e.g. "(x1;y1)(x2;y2)(x3;y3)"
+    QList<QPointF> points;
+    bool okX = false;
+    bool okY = false;
+
+    if (serialized.size() < 2 || serialized[0] != '('_L1 || serialized[serialized.size() - 1] != ')'_L1) {
+        return {KGlobalShortcutTriggerPrivate::Unparseable{}};
+    }
+
+    for (const QStringView &pointString : serialized.sliced(1, serialized.size() - 2).tokenize(")("_L1)) {
+        QList<QStringView> numStrings = pointString.split(';'_L1);
+        if (numStrings.size() != 2) { // x, y
+            return {KGlobalShortcutTriggerPrivate::Unparseable{}};
+        }
+        qreal x = numStrings[0].toDouble(&okX);
+        qreal y = numStrings[1].toDouble(&okY);
+        if (!okX || !okY) {
+            return {KGlobalShortcutTriggerPrivate::Unparseable{}};
+        }
+        points.emplaceBack(x, y);
+    }
+
+    if (points.size() < 2) { // need at least source and destination points
+        return {KGlobalShortcutTriggerPrivate::Unparseable{}};
+    }
+    return {LineShapeGesture{.points = points}};
+}
 } // namespace
 
 void KGlobalShortcutTriggerPrivate::deserialize()
@@ -311,6 +365,8 @@ void KGlobalShortcutTriggerPrivate::deserialize()
         variant = parseSwipeGestureParams<TouchscreenSwipeGesture>(paramStringView());
     } else if (triggerType == TouchscreenPinchString) {
         variant = parsePinchGestureParams<TouchscreenPinchGesture>(paramStringView());
+    } else if (triggerType == LineShapeString) {
+        variant = parseLineShapeParams(paramStringView());
     } // TODO 6.8: parse more variants
     else {
         variant = KGlobalShortcutTriggerPrivate::Unparseable{};
