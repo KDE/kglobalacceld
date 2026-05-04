@@ -39,6 +39,17 @@ QList<KGlobalShortcutInfo> GlobalShortcutContext::allShortcutInfos() const
     return rc;
 }
 
+QList<KGlobalShortcutInfoExt> GlobalShortcutContext::allShortcutInfosExt() const
+{
+    QList<KGlobalShortcutInfoExt> rc;
+    for (GlobalShortcut *shortcut : std::as_const(_actionsMap)) {
+        KGlobalShortcutInfoExtBuilder builder(static_cast<KGlobalShortcutInfo>(*shortcut));
+        builder.setInverseAction(shortcut->inverseActionUniqueName());
+        rc.emplaceBack(builder.build());
+    }
+    return rc;
+}
+
 Component const *GlobalShortcutContext::component() const
 {
     return _component;
