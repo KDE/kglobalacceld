@@ -53,6 +53,7 @@ Component::Component(const QString &uniqueName, const QString &friendlyName, Glo
     : _uniqueName(uniqueName)
     , _friendlyName(friendlyName)
     , _registry(registry)
+    , _privateSettings(new ComponentPrivateSettings(this))
 {
     // Make sure we do no get uniquenames still containing the context
     Q_ASSERT(uniqueName.indexOf(QLatin1Char('|')) == -1);
@@ -157,6 +158,11 @@ QDBusObjectPath Component::dbusPath() const
 
     // QDBusObjectPath could be a little bit easier to handle :-)
     return QDBusObjectPath(QLatin1String("/component/") + dbusPath);
+}
+
+ComponentPrivateSettings *Component::privateSettings()
+{
+    return _privateSettings.get();
 }
 
 void Component::deactivateShortcuts(bool temporarily)
@@ -410,6 +416,27 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
 bool Component::isReservedConfigGroupName(const QString &name)
 {
     return name.startsWith("$"_L1); // "$InverseAction", "$Trigger", etc.
+}
+
+ComponentPrivateSettings::ComponentPrivateSettings(Component *q)
+    : q(q)
+{
+}
+
+QDBusObjectPath ComponentPrivateSettings::dbusPath() const
+{
+    return QDBusObjectPath(q->dbusPath().path() + "/privatesettings"_L1);
+}
+
+bool ComponentPrivateSettings::cleanUp()
+{
+    return q->cleanUp();
+}
+
+QList<KGlobalShortcutInfoExt> ComponentPrivateSettings::allShortcutInfos(const QString &contextName) const
+{
+    GlobalShortcutContext *context = q->_contexts.value(contextName);
+    return context ? context->allShortcutInfosExt() : QList<KGlobalShortcutInfoExt>{};
 }
 
 #include "moc_component.cpp"
