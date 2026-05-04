@@ -6,6 +6,7 @@
 
 #include "kglobalshortcuttrigger.h"
 
+#include <QDBusMetaType>
 #include <QMetaEnum>
 #include <QtAssert>
 
@@ -315,6 +316,29 @@ void KGlobalShortcutTriggerPrivate::deserialize()
     else {
         variant = KGlobalShortcutTriggerPrivate::Unparseable{};
     }
+}
+
+//
+// D-Bus wire format
+
+QDBusArgument &operator<<(QDBusArgument &argument, const KGlobalShortcutTrigger &trigger)
+{
+    argument.beginStructure();
+    argument << trigger.type() << trigger.paramString();
+    argument.endStructure();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, KGlobalShortcutTrigger &trigger)
+{
+    QString triggerType;
+    QString paramString;
+    argument.beginStructure();
+    argument >> triggerType >> paramString;
+    argument.endStructure();
+
+    trigger = KGlobalShortcutTrigger(triggerType, paramString);
+    return argument;
 }
 
 #include "moc_kglobalshortcuttrigger.cpp"

@@ -1,5 +1,6 @@
 set(kglobalaccelprivate_SRCS
     kglobalacceld.cpp
+    kglobalshortcutinfoext.cpp
     kglobalshortcuttrigger.cpp
     kserviceactioncomponent.cpp
     component.cpp
@@ -8,6 +9,16 @@ set(kglobalaccelprivate_SRCS
     globalshortcutcontext.cpp
     sequencehelpers_p.cpp
 )
+
+set(kglobalaccel_privatesettings_xml ${CMAKE_CURRENT_SOURCE_DIR}/org.kde.kglobalaccel.PrivateSettings.xml)
+set_source_files_properties(${kglobalaccel_privatesettings_xml} PROPERTIES INCLUDE "kglobalshortcutinfo.h")
+qt_add_dbus_interface(kglobalaccelprivate_SRCS ${kglobalaccel_privatesettings_xml} kglobalaccel_privatesettings_interface)
+install(FILES ${kglobalaccel_privatesettings_xml} DESTINATION ${KDE_INSTALL_DBUSINTERFACEDIR} RENAME org.kde.kglobalaccel.PrivateSettings.xml)
+
+set(kglobalaccel_componentprivatesettings_xml ${CMAKE_CURRENT_SOURCE_DIR}/org.kde.kglobalaccel.ComponentPrivateSettings.xml)
+set_source_files_properties(${kglobalaccel_componentprivatesettings_xml} PROPERTIES INCLUDE "kglobalshortcutinfoext.h")
+qt_add_dbus_interface(kglobalaccelprivate_SRCS ${kglobalaccel_componentprivatesettings_xml} kglobalaccel_componentprivatesettings_interface)
+install(FILES ${kglobalaccel_componentprivatesettings_xml} DESTINATION ${KDE_INSTALL_DBUSINTERFACEDIR} RENAME org.kde.kglobalaccel.ComponentPrivateSettings.xml)
 
 add_library(KGlobalAccelD ${kglobalaccelprivate_SRCS})
 add_library(K::KGlobalAccelD ALIAS KGlobalAccelD)
@@ -54,11 +65,21 @@ set_target_properties(KGlobalAccelD PROPERTIES
 
 target_compile_definitions(KGlobalAccelD PRIVATE -DQDBUS=${qdbus_EXECUTABLE})
 
+ecm_generate_headers(KGlobalAccelD_HEADERS
+  HEADER_NAMES
+  KGlobalShortcutInfoExt
+  KGlobalShortcutTrigger
+
+  REQUIRED_HEADERS KGlobalAccelD_HEADERS
+)
+
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
     shortcutkeystate.h
     kglobalacceld.h
+    kglobalshortcutinfoext.h
     kglobalshortcuttrigger.h
+    ${KGlobalAccelD_HEADERS}
     DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
 

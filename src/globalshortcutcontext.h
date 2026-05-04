@@ -7,7 +7,9 @@
 #ifndef GLOBALSHORTCUTCONTEXT_H
 #define GLOBALSHORTCUTCONTEXT_H
 
-#include "kglobalshortcutinfo.h"
+#include "kglobalshortcutinfoext.h"
+
+#include <KGlobalShortcutInfo>
 
 #include <QHash>
 #include <QString>
@@ -39,6 +41,9 @@ public:
 
     //! Return KGlobalShortcutInfos for all shortcuts
     QList<KGlobalShortcutInfo> allShortcutInfos() const;
+
+    //! Return KGlobalShortcutInfoExts for all shortcuts
+    QList<KGlobalShortcutInfoExt> allShortcutInfosExt() const;
 
     /**
      * Get the name for the context

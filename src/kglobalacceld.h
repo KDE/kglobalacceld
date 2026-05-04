@@ -245,4 +245,49 @@ private:
     KGlobalAccelDPrivate *const d;
 };
 
+// Private D-Bus API for System Settings, without having to keep backwards compatibility
+class KGLOBALACCELD_EXPORT KGlobalAccelPrivateSettings : public QObject, protected QDBusContext
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.kde.kglobalaccel.PrivateSettings")
+
+public:
+    void init(KGlobalAccelDPrivate *d);
+
+public Q_SLOTS:
+    /**
+     * Get the dbus path for all known components' private settings objects.
+     *
+     * The returned path is absolute. No need to prepend anything.
+     */
+    Q_SCRIPTABLE QList<QDBusObjectPath> allComponents() const;
+
+    /**
+     * Get the dbus path for the private settings object of @p componentUnique.
+     *
+     * @param componentUnique the components unique identifier
+     *
+     * @return the absolute dbus path
+     */
+    Q_SCRIPTABLE QDBusObjectPath getComponent(const QString &componentUnique) const;
+
+    /**
+     * Get the dbus path for the private settings object of the @p desktopFileName component.
+     *
+     * Load the .desktop file and create the component if it wasn't previously known.
+     *
+     * @param desktopFileName the desktop file name / unique component identifier, ending in ".desktop"
+     *
+     * @return the absolute dbus path
+     */
+    Q_SCRIPTABLE QDBusObjectPath desktopFileComponent(const QString &desktopFileName);
+
+    // this is used if application A wants to change shortcuts of application B
+    Q_SCRIPTABLE void setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys);
+    Q_SCRIPTABLE void setForeignShortcutTriggers(const QStringList &actionId, const QString &triggerType, const QSet<QString> &triggerParamStrings);
+
+private:
+    KGlobalAccelDPrivate *d;
+};
+
 #endif // KGLOBALACCELD_H

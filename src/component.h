@@ -10,11 +10,11 @@
 #include "kglobalacceld_export.h"
 
 #include "globalshortcut.h"
-#include "kglobalshortcutinfo.h"
+#include "kglobalshortcutinfoext.h"
 
-#include "kconfiggroup.h"
-
+#include <KConfigGroup>
 #include <KGlobalAccel>
+#include <KGlobalShortcutInfo>
 #include <QHash>
 #include <QObject>
 
@@ -25,6 +25,7 @@ class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
 class KGlobalShortcutTrigger;
 class ShortcutsTest;
+class ComponentPrivateSettings;
 
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
@@ -39,10 +40,7 @@ class KGLOBALACCELD_EXPORT Component : public QObject
     Q_SCRIPTABLE Q_PROPERTY(QString friendlyName READ friendlyName)
     Q_SCRIPTABLE Q_PROPERTY(QString uniqueName READ uniqueName)
 
-
 public:
-
-
     ~Component() override;
     /* clang-format on */
 
@@ -61,6 +59,9 @@ public:
 
     //! Return uniqueName converted to a valid dbus path
     QDBusObjectPath dbusPath() const;
+
+    //! Return the private settings D-Bus API object
+    ComponentPrivateSettings *privateSettings();
 
     //! Deactivate all currently active shortcuts
     void deactivateShortcuts(bool temporarily = false);
@@ -196,6 +197,8 @@ Q_SIGNALS:
     Q_SCRIPTABLE void globalShortcutReleased(const QString &componentUnique, const QString &shortcutUnique, qlonglong timestamp);
 
 protected:
+    friend class ComponentPrivateSettings;
+
     QString _uniqueName;
     // the name as it would be found in a magazine article about the application,
     // possibly localized if a localized name exists.
@@ -205,6 +208,30 @@ protected:
 
     GlobalShortcutContext *_current;
     QHash<QString, GlobalShortcutContext *> _contexts;
+
+    std::unique_ptr<ComponentPrivateSettings> _privateSettings;
+};
+
+class KGLOBALACCELD_EXPORT ComponentPrivateSettings : public QObject
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.kde.kglobalaccel.ComponentPrivateSettings")
+
+public:
+    ComponentPrivateSettings(Component *q);
+
+    //! Return component's uniqueName plus extra suffix, converted to a valid dbus path
+    QDBusObjectPath dbusPath() const;
+
+public Q_SLOTS:
+    //! Equivalent to Component::cleanUp()
+    Q_SCRIPTABLE bool cleanUp();
+
+    //! Returns all extended shortcut infos in @a context
+    Q_SCRIPTABLE QList<KGlobalShortcutInfoExt> allShortcutInfos(const QString &context = QStringLiteral("default")) const;
+
+private:
+    Component *q;
 };
 
 #endif /* #ifndef COMPONENT_H */

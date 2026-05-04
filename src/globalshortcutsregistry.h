@@ -69,6 +69,13 @@ public:
     QList<QDBusObjectPath> componentsDbusPaths() const;
 
     /**
+     * Returns a list of D-Bus paths of registered Components' private settings objects.
+     *
+     * The returned paths are absolute (i.e. no need to prepend anything).
+     */
+    QList<QDBusObjectPath> componentsDbusPathsPrivateSettings() const;
+
+    /**
      * Returns a list of QStringLists (one string list per registered component,
      * with each string list containing four strings, one for each enumerator in
      * KGlobalAccel::actionIdFields).

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.kde.kglobalaccel.ComponentPrivateSettings">
+        <method name="allShortcutInfos">
+            <arg type="a((ssssssaiai)a{s(asas)}su)" direction="out"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QList&lt;KGlobalShortcutInfoExt&gt;"/>
+            <arg name="context" type="s" direction="in"/>
+        </method>
+        <method name="allShortcutInfos">
+            <arg type="a((ssssssaiai)a{s(asas)}su)" direction="out"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QList&lt;KGlobalShortcutInfoExt&gt;"/>
+        </method>
+        <method name="cleanUp">
+            <arg type="b" direction="out"/>
+        </method>
+    </interface>
+</node>

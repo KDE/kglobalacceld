@@ -252,6 +252,7 @@ Component *GlobalShortcutsRegistry::registerComponent(ComponentPtr component)
     Q_ASSERT(!comp->dbusPath().path().isEmpty());
     QDBusConnection conn(QDBusConnection::sessionBus());
     conn.registerObject(comp->dbusPath().path(), comp, QDBusConnection::ExportScriptableContents);
+    conn.registerObject(comp->privateSettings()->dbusPath().path(), comp->privateSettings(), QDBusConnection::ExportScriptableContents);
     return comp;
 }
 
@@ -268,6 +269,16 @@ QList<QDBusObjectPath> GlobalShortcutsRegistry::componentsDbusPaths() const
     dbusPaths.reserve(m_components.size());
     std::transform(m_components.cbegin(), m_components.cend(), std::back_inserter(dbusPaths), [](const auto &comp) {
         return comp->dbusPath();
+    });
+    return dbusPaths;
+}
+
+QList<QDBusObjectPath> GlobalShortcutsRegistry::componentsDbusPathsPrivateSettings() const
+{
+    QList<QDBusObjectPath> dbusPaths;
+    dbusPaths.reserve(m_components.size());
+    std::transform(m_components.cbegin(), m_components.cend(), std::back_inserter(dbusPaths), [](const auto &comp) {
+        return comp->privateSettings()->dbusPath();
     });
     return dbusPaths;
 }
@@ -634,6 +645,7 @@ Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, c
 void GlobalShortcutsRegistry::unregisterComponent(Component *component)
 {
     QDBusConnection::sessionBus().unregisterObject(component->dbusPath().path());
+    QDBusConnection::sessionBus().unregisterObject(component->privateSettings()->dbusPath().path());
     delete component;
 }
 

@@ -47,6 +47,25 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, QSet<QKeySequence
     return argument;
 }
 
+QDBusArgument &operator<<(QDBusArgument &argument, const QSet<QString> &strings)
+{
+    argument << strings.values();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, QSet<QString> &strings)
+{
+    strings.clear();
+    argument.beginArray();
+    while (!argument.atEnd()) {
+        QString str;
+        argument >> str;
+        strings.insert(str);
+    }
+    argument.endArray();
+    return argument;
+}
+
 struct KGlobalAccelDPrivate {
     KGlobalAccelDPrivate(KGlobalAccelD *qq)
         : q(qq)
@@ -86,6 +105,8 @@ struct KGlobalAccelDPrivate {
     KGlobalAccelD *q;
 
     std::unique_ptr<GlobalShortcutsRegistry> m_registry = nullptr;
+
+    std::unique_ptr<KGlobalAccelPrivateSettings> m_privateSettings;
 
     using ComponentActionPair = QPair<QString, QString>;
     QHash<ComponentActionPair, QSet<KGlobalShortcutTrigger>> m_queuedDefaultTriggers;
@@ -183,6 +204,15 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
     return s;
 }
 
+void KGlobalAccelPrivateSettings::init(KGlobalAccelDPrivate *commonPrivate)
+{
+    d = commonPrivate;
+
+    if (!QDBusConnection::sessionBus().registerObject(QStringLiteral("/kglobalaccel/privatesettings"), this, QDBusConnection::ExportScriptableContents)) {
+        qCWarning(KGLOBALACCELD) << "Failed to register object /kglobalaccel/privatesettings in org.kde.kglobalaccelprivatesettings";
+    }
+}
+
 Q_DECLARE_METATYPE(QStringList)
 
 KGlobalAccelD::KGlobalAccelD()
@@ -199,10 +229,15 @@ bool KGlobalAccelD::init()
     qDBusRegisterMetaType<QList<QKeySequence>>();
     qDBusRegisterMetaType<QSet<QKeySequence>>();
     qDBusRegisterMetaType<QList<QDBusObjectPath>>();
-    qDBusRegisterMetaType<QList<QStringList>>();
     qDBusRegisterMetaType<QStringList>();
+    qDBusRegisterMetaType<QList<QStringList>>();
+    qDBusRegisterMetaType<std::pair<QStringList, QStringList>>();
+    qDBusRegisterMetaType<QSet<QString>>();
+    qDBusRegisterMetaType<KGlobalShortcutTrigger>();
     qDBusRegisterMetaType<KGlobalShortcutInfo>();
     qDBusRegisterMetaType<QList<KGlobalShortcutInfo>>();
+    qDBusRegisterMetaType<KGlobalShortcutInfoExt>();
+    qDBusRegisterMetaType<QList<KGlobalShortcutInfoExt>>();
     qDBusRegisterMetaType<KGlobalAccel::MatchType>();
 
     connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, [this] {
@@ -223,6 +258,9 @@ bool KGlobalAccelD::init()
         qCWarning(KGLOBALACCELD) << "Failed to register service org.kde.kglobalaccel";
         return false;
     }
+
+    d->m_privateSettings = std::make_unique<KGlobalAccelPrivateSettings>();
+    d->m_privateSettings->init(d);
 
     return true;
 }
@@ -336,6 +374,11 @@ QList<QDBusObjectPath> KGlobalAccelD::allComponents() const
     return d->m_registry->componentsDbusPaths();
 }
 
+QList<QDBusObjectPath> KGlobalAccelPrivateSettings::allComponents() const
+{
+    return d->m_registry->componentsDbusPathsPrivateSettings();
+}
+
 void KGlobalAccelD::blockGlobalShortcuts(bool block)
 {
     qCDebug(KGLOBALACCELD) << "Block global shortcuts?" << block;
@@ -423,14 +466,33 @@ void KGlobalAccelD::doRegister(const QStringList &actionId)
     }
 }
 
+QDBusObjectPath KGlobalAccelPrivateSettings::desktopFileComponent(const QString &desktopFileName)
+{
+    if (desktopFileName.endsWith(QLatin1String(".desktop"))) {
+        if (Component *component = d->m_registry->getOrCreateComponent(desktopFileName, desktopFileName); component != nullptr) {
+            return component->privateSettings()->dbusPath();
+        }
+    }
+    sendErrorReply(QStringLiteral("org.kde.kglobalaccel.NoSuchComponent"), QStringLiteral("The component '%1' doesn't exist.").arg(desktopFileName));
+    return QDBusObjectPath("/");
+}
+
 QDBusObjectPath KGlobalAccelD::getComponent(const QString &componentUnique) const
 {
     qCDebug(KGLOBALACCELD) << componentUnique;
 
-    Component *component = d->m_registry->getComponent(componentUnique);
-
-    if (component) {
+    if (Component *component = d->m_registry->getComponent(componentUnique); component != nullptr) {
         return component->dbusPath();
+    } else {
+        sendErrorReply(QStringLiteral("org.kde.kglobalaccel.NoSuchComponent"), QStringLiteral("The component '%1' doesn't exist.").arg(componentUnique));
+        return QDBusObjectPath("/");
+    }
+}
+
+QDBusObjectPath KGlobalAccelPrivateSettings::getComponent(const QString &componentUnique) const
+{
+    if (Component *component = d->m_registry->getComponent(componentUnique); component != nullptr) {
+        return component->privateSettings()->dbusPath();
     } else {
         sendErrorReply(QStringLiteral("org.kde.kglobalaccel.NoSuchComponent"), QStringLiteral("The component '%1' doesn't exist.").arg(componentUnique));
         return QDBusObjectPath("/");
@@ -607,7 +669,7 @@ void KGlobalAccelD::setForeignShortcut(const QStringList &actionId, const QList<
 
 void KGlobalAccelD::setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys)
 {
-    qCDebug(KGLOBALACCELD) << actionId;
+    qCDebug(KGLOBALACCELD) << "setting foreign keys for" << actionId;
 
     GlobalShortcut *shortcut = d->findAction(actionId);
     if (!shortcut) {
@@ -617,6 +679,35 @@ void KGlobalAccelD::setForeignShortcutKeys(const QStringList &actionId, const QS
     QSet<QKeySequence> newKeys = setShortcutKeys(actionId, keys, NoAutoloading);
 
     Q_EMIT yourShortcutsChanged(actionId, newKeys);
+}
+
+void KGlobalAccelPrivateSettings::setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys)
+{
+    d->q->setForeignShortcutKeys(actionId, keys);
+}
+
+void KGlobalAccelPrivateSettings::setForeignShortcutTriggers(const QStringList &actionId, const QString &triggerType, const QSet<QString> &triggerParamStrings)
+{
+    qCDebug(KGLOBALACCELD) << "setting foreign" << triggerType << "triggers for" << actionId << "to" << triggerParamStrings;
+
+    GlobalShortcut *shortcut = d->findAction(actionId);
+    if (!shortcut) {
+        return;
+    }
+
+    QSet<KGlobalShortcutTrigger> triggers;
+    triggers.reserve(triggerParamStrings.size());
+    for (const QString &triggerParamString : triggerParamStrings) {
+        triggers.insert(KGlobalShortcutTrigger(triggerType, triggerParamString));
+    }
+
+    // now we are actually changing the triggers of the action (of this trigger type)
+    shortcut->setTriggers(triggerType, triggers, GlobalShortcut::FromOverride);
+
+    d->scheduleWriteSettings();
+
+    // do not emit a signal like yourShortcutsChanged - KGlobalAccel doesn't deal with triggers
+    // at the time of writing
 }
 
 bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,

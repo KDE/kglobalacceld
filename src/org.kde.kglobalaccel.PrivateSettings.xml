@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.kde.kglobalaccel.PrivateSettings">
+        <method name="allComponents">
+            <arg type="ao" direction="out"/>
+        </method>
+        <method name="getComponent">
+            <arg type="o" direction="out"/>
+            <arg name="componentUnique" type="s" direction="in"/>
+        </method>
+        <method name="desktopFileComponent">
+            <arg type="o" direction="out"/>
+            <arg name="desktopFileName" type="s" direction="in"/>
+        </method>
+        <method name="setForeignShortcutKeys">
+            <arg name="actionId" type="as" direction="in"/>
+            <arg name="keys" type="a(ai)" direction="in"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.In1" value="QList&lt;QKeySequence&gt;"/>
+        </method>
+        <method name="setForeignShortcutTriggers">
+            <arg name="actionId" type="as" direction="in"/>
+            <arg name="triggerType" type="s" direction="in"/>
+            <arg name="triggerParamStrings" type="as" direction="in"/>
+        </method>
+    </interface>
+</node>
