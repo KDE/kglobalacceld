@@ -150,10 +150,10 @@ QKeySequence normalizeSequence(const QKeySequence &key)
     for (int i = 0; i < key.count(); i++) {
         // Qt triggers both shortcuts that include Shift+Backtab and Shift+Tab
         // when user presses Shift+Tab. Make no difference here.
-        int keySym = key[i].toCombined() & ~Qt::KeyboardModifierMask;
-        int keyMod = key[i].toCombined() & Qt::KeyboardModifierMask;
-        if ((keyMod & Qt::SHIFT) && (keySym == Qt::Key_Backtab || keySym == Qt::Key_Tab)) {
-            k[i] = keyMod | Qt::Key_Tab;
+        const int keySym = key[i].toCombined() & ~Qt::KeyboardModifierMask;
+        const int keyMod = key[i].toCombined() & Qt::KeyboardModifierMask;
+        if (keySym == Qt::Key_Backtab) {
+            k[i] = keyMod | Qt::ShiftModifier | Qt::Key_Tab;
         } else {
             k[i] = normalizeKey(key[i]).toCombined();
         }
