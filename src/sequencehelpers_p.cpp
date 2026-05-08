@@ -139,4 +139,14 @@ QKeySequence normalizeSequence(const QKeySequence &key)
     return QKeySequence(k[0], k[1], k[2], k[3]);
 }
 
+QSet<QKeySequence> normalizeSequences(const QSet<QKeySequence> &keys)
+{
+    QSet<QKeySequence> ret;
+    ret.reserve(keys.size());
+    for (const QKeySequence &key : keys) {
+        ret.insert(normalizeSequence(key));
+    }
+    return ret;
+}
+
 } // namespace Utils

@@ -16,6 +16,7 @@
 #include "kglobalaccel.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
+#include "sequencehelpers_p.h"
 
 #include <QDBusConnection>
 #include <QDBusMetaType>
@@ -282,7 +283,8 @@ QStringList KGlobalAccelD::action(int key) const
 
 QStringList KGlobalAccelD::actionList(const QKeySequence &key) const
 {
-    GlobalShortcut *shortcut = d->m_registry->getShortcutByKey(key);
+    const QKeySequence normalizedKey = Utils::normalizeSequence(key);
+    GlobalShortcut *shortcut = d->m_registry->getShortcutByKey(normalizedKey);
     QStringList ret;
     if (shortcut) {
         ret.append(shortcut->context()->component()->uniqueName());
@@ -417,7 +419,8 @@ QList<KGlobalShortcutInfo> KGlobalAccelD::getGlobalShortcutsByKey(int key) const
 QList<KGlobalShortcutInfo> KGlobalAccelD::globalShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     qCDebug(KGLOBALACCELD) << key;
-    const QList<GlobalShortcut *> shortcuts = d->m_registry->getShortcutsByKey(key, type);
+    const QKeySequence normalizedKey = Utils::normalizeSequence(key);
+    const QList<GlobalShortcut *> shortcuts = d->m_registry->getShortcutsByKey(normalizedKey, type);
 
     QList<KGlobalShortcutInfo> rc;
     rc.reserve(shortcuts.size());
@@ -513,13 +516,15 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
         return QSet<QKeySequence>();
     }
 
+    const QSet<QKeySequence> normalizedKeys = Utils::normalizeSequences(keys);
+
     // default shortcuts cannot clash because they don't do anything
     if (isDefault) {
-        if (shortcut->defaultKeys() != keys) {
-            shortcut->setDefaultKeys(keys);
+        if (shortcut->defaultKeys() != normalizedKeys) {
+            shortcut->setDefaultKeys(normalizedKeys);
             scheduleWriteSettings();
         }
-        return keys; // doesn't matter
+        return normalizedKeys; // doesn't matter
     }
 
     if (isAutoloading && !shortcut->isFresh()) {
@@ -533,7 +538,7 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     }
 
     // now we are actually changing the shortcut of the action
-    shortcut->setKeys(keys);
+    shortcut->setKeys(normalizedKeys);
 
     if (setPresent) {
         shortcut->setIsPresent(true);
