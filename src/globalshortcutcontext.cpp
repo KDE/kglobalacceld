@@ -71,24 +71,22 @@ QList<GlobalShortcut *> GlobalShortcutContext::getShortcutsByKey(const QKeySeque
     }
 
     QList<GlobalShortcut *> ret;
-    const QKeySequence keyMangled = Utils::normalizeSequence(key);
     for (GlobalShortcut *sc : std::as_const(_actionsMap)) {
         const auto keys = sc->keys();
         for (const QKeySequence &other : keys) {
-            const QKeySequence otherMangled = Utils::normalizeSequence(other);
             switch (type) {
             case KGlobalAccel::MatchType::Equal:
-                if (otherMangled == keyMangled) {
+                if (other == key) {
                     ret.append(sc);
                 }
                 break;
             case KGlobalAccel::MatchType::Shadows:
-                if (!other.isEmpty() && Utils::contains(keyMangled, otherMangled)) {
+                if (!other.isEmpty() && Utils::contains(key, other)) {
                     ret.append(sc);
                 }
                 break;
             case KGlobalAccel::MatchType::Shadowed:
-                if (!other.isEmpty() && Utils::contains(otherMangled, keyMangled)) {
+                if (!other.isEmpty() && Utils::contains(other, key)) {
                     ret.append(sc);
                 }
                 break;

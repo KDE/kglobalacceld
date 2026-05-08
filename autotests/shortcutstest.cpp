@@ -90,34 +90,34 @@ void ShortcutsTest::testShortcuts_data()
         << false;
 
     QTest::newRow("modifier-only single mod") << QKeySequence(
-        Qt::ControlModifier) << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
+        Qt::Key_Control) << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
                                               << true;
     QTest::newRow("mod+key does not trigger modifier-only single mod")
-        << QKeySequence(Qt::ControlModifier)
+        << QKeySequence(Qt::Key_Control)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::KeyPress, (Qt::ControlModifier | Qt::Key_P).toCombined())
                      << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_P).toCombined())
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << false;
-    QTest::newRow("modifier-only multiple mods") << QKeySequence(Qt::ControlModifier | Qt::AltModifier)
+    QTest::newRow("modifier-only multiple mods") << QKeySequence(Qt::ControlModifier | Qt::Key_Alt)
                                                  << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control)
                                                               << std::make_pair(QEvent::KeyPress, (Qt::ControlModifier | Qt::Key_Alt).toCombined())
                                                               << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_Alt).toCombined())
                                                               << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
                                                  << true;
     QTest::newRow("modifier-only multiple mods trigger when released out of order")
-        << QKeySequence(Qt::ControlModifier | Qt::AltModifier)
+        << QKeySequence(Qt::ControlModifier | Qt::Key_Alt)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Alt) << std::make_pair(QEvent::KeyPress, (Qt::AltModifier | Qt::Key_Control).toCombined())
                      << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_Alt).toCombined())
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << true;
     QTest::newRow("modifier-only multiple mods does not trigger modifier-only single mod")
-        << QKeySequence(Qt::ControlModifier)
+        << QKeySequence(Qt::Key_Control)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::KeyPress, (Qt::ControlModifier | Qt::Key_Alt).toCombined())
                      << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_Alt).toCombined())
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << false;
     QTest::newRow("modifier-only multiple mods trigger when part of the sequence")
-        << QKeySequence(Qt::ControlModifier | Qt::AltModifier)
+        << QKeySequence(Qt::ControlModifier | Qt::Key_Alt)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control)
                      << std::make_pair(QEvent::KeyPress, (Qt::ControlModifier | Qt::Key_Shift).toCombined())
                      << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_Shift).toCombined())
@@ -125,7 +125,7 @@ void ShortcutsTest::testShortcuts_data()
                      << std::make_pair(QEvent::KeyRelease, (Qt::AltModifier | Qt::Key_Control).toCombined()) << std::make_pair(QEvent::KeyRelease, Qt::Key_Alt))
         << true;
     QTest::newRow("modifier-only multiple mods trigger when any mod is released")
-        << QKeySequence(Qt::ControlModifier | Qt::ShiftModifier)
+        << QKeySequence(Qt::ControlModifier | Qt::Key_Shift)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control)
                      << std::make_pair(QEvent::KeyPress, (Qt::ControlModifier | Qt::Key_Shift).toCombined())
                      << std::make_pair(QEvent::KeyRelease, (Qt::ControlModifier | Qt::Key_Shift).toCombined())
@@ -133,17 +133,17 @@ void ShortcutsTest::testShortcuts_data()
                      << std::make_pair(QEvent::KeyRelease, (Qt::AltModifier | Qt::Key_Control).toCombined()) << std::make_pair(QEvent::KeyRelease, Qt::Key_Alt))
         << true;
     QTest::newRow("mod+pointer does not trigger modifier-only single mod")
-        << QKeySequence(Qt::ControlModifier)
+        << QKeySequence(Qt::Key_Control)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::MouseButtonPress, Qt::LeftButton)
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << false;
     QTest::newRow("mod+wheel does not trigger modifier-only single mod")
-        << QKeySequence(Qt::ControlModifier)
+        << QKeySequence(Qt::Key_Control)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Control) << std::make_pair(QEvent::Wheel, 0)
                      << std::make_pair(QEvent::KeyRelease, Qt::Key_Control))
         << false;
     QTest::newRow("mod+invalid does not trigger modifier-only single mod")
-        << QKeySequence(Qt::ControlModifier)
+        << QKeySequence(Qt::Key_Control)
         << (Events() << std::make_pair(QEvent::KeyPress, Qt::ControlModifier) << std::make_pair(QEvent::KeyRelease, Qt::ControlModifier)) << false;
 }
 

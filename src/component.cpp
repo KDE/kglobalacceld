@@ -10,6 +10,7 @@
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel_interface.h"
 #include "logging.h"
+#include "sequencehelpers_p.h"
 
 #include <QKeySequence>
 #include <QStringList>
@@ -25,7 +26,7 @@ QSet<QKeySequence> Component::keysFromString(const QString &str)
         QKeySequence key = QKeySequence::fromString(s, QKeySequence::PortableText);
         ret.insert(key);
     }
-    return ret;
+    return Utils::normalizeSequences(ret);
 }
 
 QString Component::stringFromKeys(const QSet<QKeySequence> &keys)
