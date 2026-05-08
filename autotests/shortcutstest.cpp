@@ -27,6 +27,8 @@ private Q_SLOTS:
     void testContestedKeys();
     void testBacktab_data();
     void testBacktab();
+    void testEmptyShortcut_data();
+    void testEmptyShortcut();
 
 private:
     void sendKeyCombination(QKeyCombination keyCombination, ShortcutKeyState state);
@@ -252,18 +254,16 @@ void ShortcutsTest::testShortcuts()
 
 void ShortcutsTest::testSerialization()
 {
+    QCOMPARE(Component::keysFromString(QLatin1String("")), QSet<QKeySequence>());
     QCOMPARE(Component::keysFromString(QLatin1String("none")), QSet<QKeySequence>());
     QCOMPARE(Component::stringFromKeys(QSet<QKeySequence>()), QLatin1String("none"));
-
-    QCOMPARE(Component::keysFromString(QLatin1String("")), QSet<QKeySequence>() << QKeySequence());
-    QCOMPARE(Component::stringFromKeys(QSet<QKeySequence>() << QKeySequence()), QLatin1String("none"));
 
     QCOMPARE(Component::keysFromString(QLatin1String("Ctrl+P")), QSet<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P));
     QCOMPARE(Component::stringFromKeys(QSet<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P)), QLatin1String("Ctrl+P"));
 
-    QCOMPARE(Component::keysFromString(QLatin1String("\tCtrl+P")), QSet<QKeySequence>() << QKeySequence() << QKeySequence(Qt::CTRL | Qt::Key_P));
-    QCOMPARE(Component::keysFromString(QLatin1String("\tCtrl+P\t")), QSet<QKeySequence>() << QKeySequence() << QKeySequence(Qt::CTRL | Qt::Key_P));
-    QCOMPARE(Component::stringFromKeys(QSet<QKeySequence>() << QKeySequence() << QKeySequence(Qt::CTRL | Qt::Key_P)), QLatin1String("\tCtrl+P"));
+    QCOMPARE(Component::keysFromString(QLatin1String("\tCtrl+P")), QSet<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P));
+    QCOMPARE(Component::keysFromString(QLatin1String("\tCtrl+P\t")), QSet<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P));
+    QCOMPARE(Component::stringFromKeys(QSet<QKeySequence>() << QKeySequence(Qt::CTRL | Qt::Key_P)), QLatin1String("Ctrl+P"));
 }
 
 void ShortcutsTest::testContestedKeys()
@@ -336,6 +336,30 @@ void ShortcutsTest::testBacktab()
 
     sendKeyCombinationPressAndRelease(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Backtab);
     QVERIFY(!actionTriggeredSpy.wait(100));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testEmptyShortcut_data()
+{
+    QTest::addColumn<QList<QKeySequence>>("shortcuts");
+    QTest::addColumn<QList<QKeySequence>>("expected");
+
+    QTest::addRow("List()") << QList<QKeySequence>{} << QList<QKeySequence>{};
+
+    QTest::addRow("List(QKeySequence())") << QList<QKeySequence>{QKeySequence()} << QList<QKeySequence>{};
+
+    QTest::addRow("List(QKeySequence(), QKeySequence(Meta+A))")
+        << QList<QKeySequence>{QKeySequence(), QKeySequence(Qt::MetaModifier | Qt::Key_A)} << QList<QKeySequence>{QKeySequence(Qt::MetaModifier | Qt::Key_A)};
+}
+
+void ShortcutsTest::testEmptyShortcut()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("Empty Shortcut"));
+    QFETCH(QList<QKeySequence>, shortcuts);
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), shortcuts));
+    QTEST(m_globalaccel->shortcut(action.get()), "expected");
 
     m_globalaccel->removeAllShortcuts(action.get());
 }

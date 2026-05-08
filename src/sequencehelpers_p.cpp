@@ -167,7 +167,9 @@ QSet<QKeySequence> normalizeSequences(const QSet<QKeySequence> &keys)
     QSet<QKeySequence> ret;
     ret.reserve(keys.size());
     for (const QKeySequence &key : keys) {
-        ret.insert(normalizeSequence(key));
+        if (!key.isEmpty()) {
+            ret.insert(normalizeSequence(key));
+        }
     }
     return ret;
 }
