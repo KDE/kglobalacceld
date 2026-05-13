@@ -225,10 +225,7 @@ QList<GlobalShortcut *> Component::getShortcutsByKey(const QKeySequence &key, KG
 {
     QList<GlobalShortcut *> rc;
     for (GlobalShortcutContext *context : std::as_const(_contexts)) {
-        GlobalShortcut *sc = context->getShortcutByKey(key, type);
-        if (sc) {
-            rc.append(sc);
-        }
+        rc += context->getShortcutsByKey(key, type);
     }
     return rc;
 }

@@ -23,6 +23,7 @@
 #include <KFileUtils>
 #include <KPluginMetaData>
 #include <KSycoca>
+#include <KWindowSystem>
 
 #include <QDBusConnection>
 #include <QDir>
@@ -400,13 +401,26 @@ QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByKey(const QKeySeq
 
 GlobalShortcut *GlobalShortcutsRegistry::activeShortcutByKey(const QKeySequence &keySequence) const
 {
-    // TODO: Ensure that we operate with normalized keys so the lookup time can be O(1) on average instead of O(N).
-    const QKeySequence normalizedKeySequence = Utils::normalizeSequence(keySequence);
     QVarLengthArray<GlobalShortcut *, 4> shortcuts;
-    for (const auto &[candidateKeySequence, shortcut] : _active_keys.asKeyValueRange()) {
-        const QKeySequence normalizedCandidateKeySequence = Utils::normalizeSequence(candidateKeySequence);
-        if (normalizedKeySequence == normalizedCandidateKeySequence) {
-            shortcuts.append(shortcut);
+
+    // On X11, kglobalacceld fails to grab some modifier keys, so _active_keys doesn't contain those
+    // shortcuts. On Wayland, everything works as expected. Given that the X11 code is on its way out,
+    // make this function go through all available shortcuts to match the previous behavior.
+    if (KWindowSystem::isPlatformX11()) {
+        for (const ComponentPtr &component : m_components) {
+            const auto candidates = component->getShortcutsByKey(keySequence, KGlobalAccel::Equal);
+            for (const auto candidate : candidates) {
+                shortcuts.append(candidate);
+            }
+        }
+    } else {
+        // TODO: Ensure that we operate with normalized keys so the lookup time can be O(1) on average instead of O(N).
+        const QKeySequence normalizedKeySequence = Utils::normalizeSequence(keySequence);
+        for (const auto &[candidateKeySequence, shortcut] : _active_keys.asKeyValueRange()) {
+            const QKeySequence normalizedCandidateKeySequence = Utils::normalizeSequence(candidateKeySequence);
+            if (normalizedKeySequence == normalizedCandidateKeySequence) {
+                shortcuts.append(shortcut);
+            }
         }
     }
 

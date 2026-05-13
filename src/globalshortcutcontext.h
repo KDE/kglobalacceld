@@ -50,6 +50,7 @@ public:
 
     //! Get shortcut for @p key or nullptr
     GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+    QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
 
     //! Remove @p shortcut from the context. The shortcut is not deleted.
     GlobalShortcut *takeShortcut(GlobalShortcut *shortcut);
