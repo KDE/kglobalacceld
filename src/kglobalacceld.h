@@ -73,7 +73,10 @@ public Q_SLOTS:
     KGLOBALACCELD_DEPRECATED_VERSION(5, 90, "Use actionList(const QKeySequence &) instead.")
     Q_SCRIPTABLE QStringList action(int key) const;
 #endif
+#if KGLOBALACCELD_ENABLE_DEPRECATED_SINCE(6, 7)
+    KGLOBALACCELD_DEPRECATED_VERSION(6, 7, "Use globalShortcutsByKey() instead.")
     Q_SCRIPTABLE QStringList actionList(const QKeySequence &key) const;
+#endif
 
     // to be called by main components not owning the action
 #if KGLOBALACCELD_ENABLE_DEPRECATED_SINCE(5, 90)

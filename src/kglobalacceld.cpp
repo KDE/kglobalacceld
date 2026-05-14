@@ -251,6 +251,7 @@ QStringList KGlobalAccelD::action(int key) const
 }
 #endif
 
+#if KGLOBALACCELD_BUILD_DEPRECATED_SINCE(6, 7)
 QStringList KGlobalAccelD::actionList(const QKeySequence &key) const
 {
     QList<GlobalShortcut *> shortcuts = d->m_registry->getShortcutsByKey(key);
@@ -269,6 +270,7 @@ QStringList KGlobalAccelD::actionList(const QKeySequence &key) const
         shortcuts[0]->friendlyName(),
     };
 }
+#endif
 
 void KGlobalAccelD::activateGlobalShortcutContext(const QString &component, const QString &uniqueName)
 {
