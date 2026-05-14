@@ -112,7 +112,7 @@ public:
      *
      * @see getShortcutsByKey(int key)
      */
-    QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &keySequence, KGlobalAccel::MatchType type) const;
+    QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &keySequence, KGlobalAccel::MatchType type = KGlobalAccel::MatchType::Equal) const;
 
     /**
      * Returns an active shortcut for the specified @a keySequence. If there is no active global shortcut

@@ -141,7 +141,8 @@ void GlobalShortcut::setKeys(const QSet<QKeySequence> &newKeys)
                 continue;
             }
 
-            if (const GlobalShortcut *shortcut = _registry->getShortcutByKey(keySequence)) {
+            const auto shortcuts = _registry->getShortcutsByKey(keySequence);
+            for (const GlobalShortcut *shortcut : shortcuts) {
                 qCDebug(KGLOBALACCELD) << _uniqueName << "may not be triggered by" << keySequence << "because it is already taken by" << shortcut->uniqueName();
             }
         }
