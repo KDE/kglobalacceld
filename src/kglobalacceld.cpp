@@ -253,15 +253,21 @@ QStringList KGlobalAccelD::action(int key) const
 
 QStringList KGlobalAccelD::actionList(const QKeySequence &key) const
 {
-    GlobalShortcut *shortcut = d->m_registry->getShortcutByKey(key);
-    QStringList ret;
-    if (shortcut) {
-        ret.append(shortcut->context()->component()->uniqueName());
-        ret.append(shortcut->uniqueName());
-        ret.append(shortcut->context()->component()->friendlyName());
-        ret.append(shortcut->friendlyName());
+    QList<GlobalShortcut *> shortcuts = d->m_registry->getShortcutsByKey(key);
+    if (shortcuts.isEmpty()) {
+        return {};
     }
-    return ret;
+
+    std::sort(shortcuts.begin(), shortcuts.end(), [](const auto &a, const auto &b) {
+        return a->serial() < b->serial();
+    });
+
+    return {
+        shortcuts[0]->context()->component()->uniqueName(),
+        shortcuts[0]->uniqueName(),
+        shortcuts[0]->context()->component()->friendlyName(),
+        shortcuts[0]->friendlyName(),
+    };
 }
 
 void KGlobalAccelD::activateGlobalShortcutContext(const QString &component, const QString &uniqueName)

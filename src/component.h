@@ -67,9 +67,6 @@ public:
     //! Returns the friendly name
     QString friendlyName() const;
 
-    //! Returns the currently active shortcut for key
-    GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
-
     //! Returns the shortcut context @p name or nullptr
     GlobalShortcutContext *shortcutContext(const QString &name);
     GlobalShortcutContext const *shortcutContext(const QString &name) const;

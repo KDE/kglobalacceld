@@ -396,17 +396,6 @@ Component *GlobalShortcutsRegistry::getOrCreateComponent(const QString &uniqueNa
     }
 }
 
-GlobalShortcut *GlobalShortcutsRegistry::getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
-{
-    for (const ComponentPtr &component : m_components) {
-        GlobalShortcut *rc = component->getShortcutByKey(key, type);
-        if (rc) {
-            return rc;
-        }
-    }
-    return nullptr;
-}
-
 QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     QList<GlobalShortcut *> rc;

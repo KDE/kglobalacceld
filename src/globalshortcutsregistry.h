@@ -98,15 +98,6 @@ public:
     Component *getOrCreateComponent(const QString &uniqueName, const QString &friendlyName);
 
     /**
-     * Get the shortcut corresponding to key. Active and inactive shortcuts
-     * are considered. But if the matching application uses contexts only one
-     * shortcut is returned.
-     *
-     * @see getShortcutsByKey(int key)
-     */
-    GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type = KGlobalAccel::MatchType::Equal) const;
-
-    /**
      * Get the shortcuts corresponding to key. Active and inactive shortcuts
      * are considered.
      *

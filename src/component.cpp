@@ -216,11 +216,6 @@ QString Component::friendlyName() const
     return !_friendlyName.isEmpty() ? _friendlyName : _uniqueName;
 }
 
-GlobalShortcut *Component::getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
-{
-    return _current->getShortcutByKey(key, type);
-}
-
 QList<GlobalShortcut *> Component::getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     QList<GlobalShortcut *> rc;
