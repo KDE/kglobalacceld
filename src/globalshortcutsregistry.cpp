@@ -411,12 +411,9 @@ QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByKey(const QKeySeq
 {
     QList<GlobalShortcut *> rc;
     for (const ComponentPtr &component : m_components) {
-        rc = component->getShortcutsByKey(key, type);
-        if (!rc.isEmpty()) {
-            return rc;
-        }
+        rc += component->getShortcutsByKey(key, type);
     }
-    return {};
+    return rc;
 }
 
 GlobalShortcut *GlobalShortcutsRegistry::activeShortcutByKey(const QKeySequence &keySequence) const
