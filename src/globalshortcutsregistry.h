@@ -135,6 +135,9 @@ public:
      */
     uint64_t nextSerial();
 
+    KConfig *config();
+    KConfig *state();
+
 public Q_SLOTS:
 
     void clear();

@@ -1038,4 +1038,14 @@ uint64_t GlobalShortcutsRegistry::nextSerial()
     return ++m_serial;
 }
 
+KConfig *GlobalShortcutsRegistry::config()
+{
+    return &_config;
+}
+
+KConfig *GlobalShortcutsRegistry::state()
+{
+    return &_state;
+}
+
 #include "moc_globalshortcutsregistry.cpp"

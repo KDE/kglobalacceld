@@ -142,7 +142,8 @@ Component *KGlobalAccelDPrivate::component(const QStringList &actionId) const
             return nullptr;
         }
         actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
-        actionComp->loadSettings(KConfigGroup(), KConfigGroup());
+        actionComp->loadSettings(m_registry->config()->group(QStringLiteral("services")).group(uniqueName),
+                                 m_registry->state()->group(QStringLiteral("services")).group(uniqueName));
         return actionComp;
     } else {
         return m_registry->createComponent(uniqueName, friendlyName);
