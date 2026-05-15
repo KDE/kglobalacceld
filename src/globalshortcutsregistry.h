@@ -86,8 +86,16 @@ public:
     void deactivateShortcuts(bool temporarily = false);
 
     /**
+     * Returns a component with the specified id @a uniqueName. If no component with the given name
+     * exists, @c null will be returned.
      */
     Component *getComponent(const QString &uniqueName);
+
+    /**
+     * Returns a component with the specified @a uniqueName, if it exists. Otherwise, it will create
+     * a new component with the given @a uniqueName and @a friendlyName, and return the new component.
+     */
+    Component *getOrCreateComponent(const QString &uniqueName, const QString &friendlyName);
 
     /**
      * Get the shortcut corresponding to key. Active and inactive shortcuts
@@ -134,9 +142,6 @@ public:
      * shortcut has been registered.
      */
     uint64_t nextSerial();
-
-    KConfig *config();
-    KConfig *state();
 
 public Q_SLOTS:
 

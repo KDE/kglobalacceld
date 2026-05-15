@@ -376,6 +376,26 @@ Component *GlobalShortcutsRegistry::getComponent(const QString &uniqueName)
     return it != m_components.cend() ? (*it).get() : nullptr;
 }
 
+Component *GlobalShortcutsRegistry::getOrCreateComponent(const QString &uniqueName, const QString &friendlyName)
+{
+    if (const auto it = findByName(uniqueName); it != m_components.cend()) {
+        return (*it).get();
+    }
+
+    if (uniqueName.endsWith(QLatin1String(".desktop"))) {
+        auto *actionComp = createServiceActionComponent(uniqueName);
+        if (!actionComp) {
+            return nullptr;
+        }
+        actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
+        actionComp->loadSettings(_config.group(QStringLiteral("services")).group(uniqueName),
+                                 _state.group(QStringLiteral("services")).group(uniqueName));
+        return actionComp;
+    } else {
+        return createComponent(uniqueName, friendlyName);
+    }
+}
+
 GlobalShortcut *GlobalShortcutsRegistry::getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const
 {
     for (const ComponentPtr &component : m_components) {
@@ -1036,16 +1056,6 @@ KGlobalAccelInterface *GlobalShortcutsRegistry::interface() const
 uint64_t GlobalShortcutsRegistry::nextSerial()
 {
     return ++m_serial;
-}
-
-KConfig *GlobalShortcutsRegistry::config()
-{
-    return &_config;
-}
-
-KConfig *GlobalShortcutsRegistry::state()
-{
-    return &_state;
 }
 
 #include "moc_globalshortcutsregistry.cpp"

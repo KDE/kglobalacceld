@@ -61,7 +61,6 @@ struct KGlobalAccelDPrivate {
     GlobalShortcut *findAction(const QString &componentUnique, const QString &shortcutUnique) const;
 
     GlobalShortcut *addAction(const QStringList &actionId);
-    Component *component(const QStringList &actionId) const;
 
     void splitComponent(QString &component, QString &context) const
     {
@@ -125,31 +124,6 @@ GlobalShortcut *KGlobalAccelDPrivate::findAction(const QString &_componentUnique
     return shortcut;
 }
 
-Component *KGlobalAccelDPrivate::component(const QStringList &actionId) const
-{
-    const QString uniqueName = actionId.at(KGlobalAccel::ComponentUnique);
-
-    // If a component for action already exists, use that...
-    if (Component *c = m_registry->getComponent(uniqueName)) {
-        return c;
-    }
-
-    // ... otherwise, create a new one
-    const QString friendlyName = actionId.at(KGlobalAccel::ComponentFriendly);
-    if (uniqueName.endsWith(QLatin1String(".desktop"))) {
-        auto *actionComp = m_registry->createServiceActionComponent(uniqueName);
-        if (!actionComp) {
-            return nullptr;
-        }
-        actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
-        actionComp->loadSettings(m_registry->config()->group(QStringLiteral("services")).group(uniqueName),
-                                 m_registry->state()->group(QStringLiteral("services")).group(uniqueName));
-        return actionComp;
-    } else {
-        return m_registry->createComponent(uniqueName, friendlyName);
-    }
-}
-
 KGlobalAccelInterface * ::KGlobalAccelD::interface() const
 {
     return d->m_registry->interface();
@@ -163,11 +137,7 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
     QString contextUnique;
     splitComponent(componentUnique, contextUnique);
 
-    QStringList actionIdTmp = actionId;
-    actionIdTmp.replace(KGlobalAccel::ComponentUnique, componentUnique);
-
-    // Create the component if necessary
-    Component *component = this->component(actionIdTmp);
+    Component *component = m_registry->getOrCreateComponent(componentUnique, actionId.at(KGlobalAccel::ComponentFriendly));
     if (!component) {
         return nullptr;
     }
