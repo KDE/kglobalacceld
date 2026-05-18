@@ -16,12 +16,6 @@
 #include <KIO/UntrustedProgramHandlerInterface>
 #include <KNotificationJobUiDelegate>
 
-#include "config-kglobalaccel.h"
-#if HAVE_X11
-#include <KStartupInfo>
-#include <private/qtx11extras_p.h>
-#endif
-
 class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
 {
 public:
@@ -81,13 +75,6 @@ void KServiceActionComponent::emitGlobalShortcutEvent(const GlobalShortcut &shor
     // to avoid that add our own UntrustedProgramHandler that accepts the launch regardless
     new UntrustedProgramHandler(delegate);
     job->setUiDelegate(delegate);
-#if HAVE_X11
-    if (QX11Info::isPlatformX11()) {
-        // Create a startup id ourselves. Otherwise ApplicationLauncherJob will query X11 to get a timestamp, which causes a deadlock
-        auto startupId = KStartupInfo::createNewStartupIdForTimestamp(QX11Info::appTime());
-        job->setStartupId(startupId);
-    }
-#endif
     job->start();
 }
 

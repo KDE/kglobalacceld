@@ -37,34 +37,15 @@ include(ECMAddTests)
 # Therefore we must not exclude those by default
 set(EXCLUDE_DEPRECATED_BEFORE_AND_AT 0 CACHE STRING "Control the range of deprecated API excluded from the build [default=0].")
 
-find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED DBus Gui Widgets)
-
-if (Qt6Gui_VERSION VERSION_GREATER_EQUAL "6.10.0")
-    find_package(Qt6GuiPrivate ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-endif()
+find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED DBus Gui)
 
 find_package(KF6Config ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6CoreAddons ${KF6_MIN_VERSION} REQUIRED)
-find_package(KF6Crash ${KF6_MIN_VERSION} REQUIRED)
-find_package(KF6DBusAddons ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6WindowSystem ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6GlobalAccel ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6Service ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6KIO ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6JobWidgets ${KF6_MIN_VERSION} REQUIRED)
-
-
-option(WITH_X11 "Build with X11 support." ON)
-
-if(WITH_X11)
-    find_package(XCB MODULE COMPONENTS XCB KEYSYMS XKB RECORD OPTIONAL_COMPONENTS XTEST)
-    set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding"
-                        TYPE REQUIRED
-                        )
-    set(HAVE_X11 1)
-else()
-    set(HAVE_X11 0)
-endif()
 
 find_program(qdbus_EXECUTABLE NAMES qdbus qdbus6 qdbus-qt6)
 

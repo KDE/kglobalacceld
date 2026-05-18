@@ -10,14 +10,9 @@
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel_interface.h"
 #include "logging.h"
-#include <config-kglobalaccel.h>
 
 #include <QKeySequence>
 #include <QStringList>
-
-#if HAVE_X11
-#include <private/qtx11extras_p.h>
-#endif
 
 QSet<QKeySequence> Component::keysFromString(const QString &str)
 {
@@ -179,12 +174,7 @@ void Component::deactivateShortcuts(bool temporarily)
 
 void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state)
 {
-#if HAVE_X11
-    // pass X11 timestamp
-    const long timestamp = QX11Info::appTime();
-#else
     const long timestamp = 0;
-#endif
 
     if (shortcut.context()->component() != this) {
         return;

@@ -9,8 +9,6 @@ set(kglobalaccelprivate_SRCS
     sequencehelpers_p.cpp
 )
 
-configure_file(config-kglobalaccel.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-kglobalaccel.h )
-
 add_library(KGlobalAccelD ${kglobalaccelprivate_SRCS})
 add_library(K::KGlobalAccelD ALIAS KGlobalAccelD)
 
@@ -55,26 +53,6 @@ set_target_properties(KGlobalAccelD PROPERTIES VERSION ${KGLOBALACCELD_VERSION}
 
 target_compile_definitions(KGlobalAccelD PRIVATE -DQDBUS=${qdbus_EXECUTABLE})
 
-if(XCB_XCB_FOUND)
-    target_link_libraries(KGlobalAccelD PUBLIC Qt6::GuiPrivate) # qtx11extras_p.h
-endif()
-
-add_executable(kglobalacceld main.cpp)
-
-target_include_directories(kglobalacceld PRIVATE ${CMAKE_BINARY_DIR})
-
-target_link_libraries(kglobalacceld
-    KGlobalAccelD
-    KF6::CoreAddons
-    KF6::DBusAddons   # KDBusService
-    KF6::Crash
-    )
-
-add_subdirectory(plugins)
-
-install(TARGETS KGlobalAccelD EXPORT KGlobalAccelDTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
-install(TARGETS kglobalacceld DESTINATION ${KDE_INSTALL_LIBEXECDIR})
-
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/kglobalacceld_export.h
   shortcutkeystate.h
@@ -83,13 +61,4 @@ install(FILES
   DESTINATION ${KDE_INSTALL_INCLUDEDIR}/KGlobalAccelD/ COMPONENT Devel
 )
 
-include (ECMConfiguredInstall)
-ecm_install_configured_files(
-   INPUT plasma-kglobalaccel.service.in
-   DESTINATION ${KDE_INSTALL_SYSTEMDUSERUNITDIR}
-)
-
-ecm_install_configured_files(
-    INPUT kglobalacceld.desktop.in
-    DESTINATION ${KDE_INSTALL_AUTOSTARTDIR} @ONLY
-)
+install(TARGETS KGlobalAccelD EXPORT KGlobalAccelDTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
