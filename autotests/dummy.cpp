@@ -27,13 +27,6 @@ KGlobalAccelImpl::~KGlobalAccelImpl()
 {
 }
 
-bool KGlobalAccelImpl::grabKey(int keyQt, bool grab)
-{
-    Q_UNUSED(keyQt);
-    Q_UNUSED(grab);
-    return true;
-}
-
 bool KGlobalAccelImpl::checkKeyEvent(int keyQt, ShortcutKeyState state)
 {
     return keyEvent(keyQt, state);

@@ -28,20 +28,6 @@ public:
     KGlobalAccelImpl(QObject *parent = nullptr);
     ~KGlobalAccelImpl() override;
 
-    /**
-     * This function registers or unregisters a certain key for global capture,
-     * depending on \b grab.
-     *
-     * Before destruction, every grabbed key will be released, so this
-     * object does not need to do any tracking.
-     *
-     * \param key the Qt keycode to grab or release.
-     * \param grab true to grab they key, false to release the key.
-     *
-     * \return true if successful, otherwise false.
-     */
-    bool grabKey(int key, bool grab) override;
-
     static KGlobalAccelImpl *instance();
 
 public Q_SLOTS:

@@ -294,19 +294,7 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
 GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
 {
     m_components.clear();
-
-    if (_manager) {
-        // Ungrab all keys. We don't go over GlobalShortcuts because
-        // GlobalShortcutsRegistry::self() doesn't work anymore.
-        const auto listKeys = _active_keys.keys();
-        for (const QKeySequence &key : listKeys) {
-            for (int i = 0; i < key.count(); i++) {
-                _manager->grabKey(key[i].toCombined(), false);
-            }
-        }
-    }
     _active_keys.clear();
-    _keys_count.clear();
 }
 
 Component *GlobalShortcutsRegistry::registerComponent(ComponentPtr component)
@@ -847,11 +835,6 @@ void GlobalShortcutsRegistry::detectAppsWithShortcuts()
     }
 }
 
-void GlobalShortcutsRegistry::grabKeys()
-{
-    activateShortcuts();
-}
-
 bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcut *shortcut)
 {
     if (!_manager) {
@@ -867,44 +850,6 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
     qCDebug(KGLOBALACCELD) << "Registering key" << QKeySequence(key).toString() << "for" << shortcut->context()->component()->uniqueName() << ":"
                            << shortcut->uniqueName();
 
-    bool error = false;
-    int i;
-    for (i = 0; i < key.count(); i++) {
-        const int combined = key[i].toCombined();
-
-        auto it = _keys_count.find(combined);
-        if (it != _keys_count.end()) {
-            ++*it;
-            continue;
-        }
-
-        if (!_manager->grabKey(combined, true)) {
-            error = true;
-            break;
-        }
-
-        ++_keys_count[combined];
-    }
-
-    if (error) {
-        // Last key was not registered, rewind index by 1
-        for (--i; i >= 0; i--) {
-            const int combined = key[i].toCombined();
-            auto it = _keys_count.find(combined);
-            if (it == _keys_count.end()) {
-                continue;
-            }
-
-            if (it.value() == 1) {
-                _keys_count.erase(it);
-                _manager->grabKey(combined, false);
-            } else {
-                --(it.value());
-            }
-        }
-        return false;
-    }
-
     _active_keys.insert(key, shortcut);
 
     return true;
@@ -915,11 +860,6 @@ void GlobalShortcutsRegistry::setDBusPath(const QDBusObjectPath &path)
     _dbusPath = path;
 }
 
-void GlobalShortcutsRegistry::ungrabKeys()
-{
-    deactivateShortcuts();
-}
-
 bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut)
 {
     if (!_manager) {
@@ -928,26 +868,6 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
     if (!_active_keys.contains(key, shortcut)) {
         // The shortcut doesn't own the key or the key isn't grabbed
         return false;
-    }
-
-    for (int i = 0; i < key.count(); i++) {
-        auto iter = _keys_count.find(key[i].toCombined());
-        if ((iter == _keys_count.end()) || (iter.value() <= 0)) {
-            continue;
-        }
-
-        // Unregister if there's only one ref to given key
-        // We should fail earlier when key is not registered
-        if (iter.value() == 1) {
-            qCDebug(KGLOBALACCELD) << "Unregistering key" << QKeySequence(key[i]).toString() << "for" << shortcut->context()->component()->uniqueName() << ":"
-                                   << shortcut->uniqueName();
-
-            _manager->grabKey(key[i].toCombined(), false);
-            _keys_count.erase(iter);
-        } else {
-            qCDebug(KGLOBALACCELD) << "Refused to unregister key" << QKeySequence(key[i]).toString() << ": used by another global shortcut";
-            --(iter.value());
-        }
     }
 
     if (shortcut && shortcut == m_lastShortcut) {

@@ -30,20 +30,6 @@ public:
     ~KGlobalAccelInterface() override;
 
 public:
-    /**
-     * This function registers or unregisters a certain key for global capture,
-     * depending on \b grab.
-     *
-     * Before destruction, every grabbed key will be released, so this
-     * object does not need to do any tracking.
-     *
-     * \param key the Qt keycode to grab or release.
-     * \param grab true to grab they key, false to release the key.
-     *
-     * \return true if successful, otherwise false.
-     */
-    virtual bool grabKey(int key, bool grab) = 0;
-
     void setRegistry(GlobalShortcutsRegistry *registry);
 
 protected:
@@ -52,8 +38,6 @@ protected:
      * @returns @c true if the key was handled
      **/
     bool keyEvent(int keyQt, ShortcutKeyState state);
-    void grabKeys();
-    void ungrabKeys();
     /**
      * Called by the implementation to inform us about pointer presses
      * Currently only used for clearing modifier only shortcuts

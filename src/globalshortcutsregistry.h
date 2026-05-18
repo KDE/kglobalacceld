@@ -142,12 +142,6 @@ public Q_SLOTS:
 
     void writeSettings();
 
-    // Grab the keys
-    void grabKeys();
-
-    // Ungrab the keys
-    void ungrabKeys();
-
 Q_SIGNALS:
     void needsSave();
 
@@ -180,7 +174,6 @@ private:
 
     QMultiHash<QKeySequence, GlobalShortcut *> _active_keys;
     QKeySequence _active_sequence;
-    QHash<int, int> _keys_count;
 
     Qt::KeyboardModifiers m_currentModifiers;
     // State machine:

@@ -37,16 +37,6 @@ bool KGlobalAccelInterface::keyEvent(int keyQt, ShortcutKeyState state)
     return d->owner->keyEvent(keyQt, state);
 }
 
-void KGlobalAccelInterface::grabKeys()
-{
-    d->owner->grabKeys();
-}
-
-void KGlobalAccelInterface::ungrabKeys()
-{
-    d->owner->ungrabKeys();
-}
-
 bool KGlobalAccelInterface::pointerPressed(Qt::MouseButtons buttons)
 {
     return d->owner->pointerPressed(buttons);
