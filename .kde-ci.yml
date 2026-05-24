@@ -13,5 +13,5 @@ Dependencies:
     'frameworks/kjobwidgets': '@latest-kf6'
 
 Options:
- require-passing-tests-on: ['Linux', 'FreeBSD']
+ require-passing-tests-on: ['@all']
  enable-lsan: True
