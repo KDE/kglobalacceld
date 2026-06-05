@@ -101,22 +101,45 @@ bool matchSequences(const QKeySequence &key, const QSet<QKeySequence> &keys)
     return false;
 }
 
-static int normalizeKey(int keyQt)
+static QKeyCombination normalizeKey(QKeyCombination keyCombination)
 {
-    int key = keyQt & ~Qt::KeyboardModifierMask;
-    int mod = keyQt & Qt::KeyboardModifierMask;
-    switch (key) {
+    QKeyCombination normalizedCombination;
+    switch (keyCombination.key()) {
     case Qt::Key_Shift:
-        return mod | Qt::ShiftModifier;
+        normalizedCombination = Qt::Key(0) | (keyCombination.keyboardModifiers() | Qt::ShiftModifier);
+        break;
     case Qt::Key_Control:
-        return mod | Qt::ControlModifier;
+        normalizedCombination = Qt::Key(0) | (keyCombination.keyboardModifiers() | Qt::ControlModifier);
+        break;
     case Qt::Key_Alt:
-        return mod | Qt::AltModifier;
+        normalizedCombination = Qt::Key(0) | (keyCombination.keyboardModifiers() | Qt::AltModifier);
+        break;
     case Qt::Key_Meta:
-        return mod | Qt::MetaModifier;
+        normalizedCombination = Qt::Key(0) | (keyCombination.keyboardModifiers() | Qt::MetaModifier);
+        break;
     default:
-        return keyQt;
+        normalizedCombination = keyCombination;
+        break;
     }
+
+    // QKeySequence doesn't support modifier-only shortcuts so we replace the last modifier in the
+    // key sequence with a key code. The modifiers are always ordered as Meta + Ctrl + Alt + Shift.
+    // See https://qt-project.atlassian.net/browse/QTBUG-132435.
+    if (!normalizedCombination.key()) {
+        const Qt::KeyboardModifiers modifiers = normalizedCombination.keyboardModifiers();
+
+        if (modifiers & Qt::ShiftModifier) {
+            normalizedCombination = Qt::Key_Shift | (modifiers & ~Qt::ShiftModifier);
+        } else if (modifiers & Qt::AltModifier) {
+            normalizedCombination = Qt::Key_Alt | (modifiers & ~Qt::AltModifier);
+        } else if (modifiers & Qt::ControlModifier) {
+            normalizedCombination = Qt::Key_Control | (modifiers & ~Qt::ControlModifier);
+        } else if (modifiers & Qt::MetaModifier) {
+            normalizedCombination = Qt::Key_Meta | (modifiers & ~Qt::MetaModifier);
+        }
+    }
+
+    return normalizedCombination;
 }
 
 QKeySequence normalizeSequence(const QKeySequence &key)
@@ -132,7 +155,7 @@ QKeySequence normalizeSequence(const QKeySequence &key)
         if ((keyMod & Qt::SHIFT) && (keySym == Qt::Key_Backtab || keySym == Qt::Key_Tab)) {
             k[i] = keyMod | Qt::Key_Tab;
         } else {
-            k[i] = normalizeKey(key[i].toCombined());
+            k[i] = normalizeKey(key[i]).toCombined();
         }
     }
 
