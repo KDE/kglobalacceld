@@ -183,7 +183,6 @@ bool KGlobalAccelD::init()
     d->writeoutTimer.setSingleShot(true);
     connect(&d->writeoutTimer, &QTimer::timeout, d->m_registry.get(), &GlobalShortcutsRegistry::writeSettings);
 
-    d->m_registry->setDBusPath(QDBusObjectPath("/"));
     d->m_registry->loadSettings();
 
     if (!QDBusConnection::sessionBus().registerObject(QStringLiteral("/kglobalaccel"), this, QDBusConnection::ExportScriptableContents)) {

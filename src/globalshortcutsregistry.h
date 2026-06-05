@@ -76,11 +76,6 @@ public:
     QList<QStringList> allComponentNames() const;
 
     /**
-     * Return the root dbus path for the registry.
-     */
-    QDBusObjectPath dbusPath() const;
-
-    /**
      * Deactivate all currently active shortcuts.
      */
     void deactivateShortcuts(bool temporarily = false);
@@ -120,8 +115,6 @@ public:
     bool isShortcutAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
 
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
-
-    void setDBusPath(const QDBusObjectPath &path);
 
     bool unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut);
 
@@ -248,7 +241,6 @@ private:
      */
     bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
-    QDBusObjectPath _dbusPath;
     GlobalShortcut *m_lastShortcut = nullptr;
     QTimer m_refreshServicesTimer;
     uint64_t m_serial = 0;

@@ -344,11 +344,6 @@ void GlobalShortcutsRegistry::clear()
     Q_ASSERT(_active_keys.isEmpty());
 }
 
-QDBusObjectPath GlobalShortcutsRegistry::dbusPath() const
-{
-    return _dbusPath;
-}
-
 void GlobalShortcutsRegistry::deactivateShortcuts(bool temporarily)
 {
     for (ComponentPtr &component : m_components) {
@@ -853,11 +848,6 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
     _active_keys.insert(key, shortcut);
 
     return true;
-}
-
-void GlobalShortcutsRegistry::setDBusPath(const QDBusObjectPath &path)
-{
-    _dbusPath = path;
 }
 
 bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut)

@@ -157,7 +157,7 @@ QDBusObjectPath Component::dbusPath() const
     std::replace_if(dbusPath.begin(), dbusPath.end(), isNonAscii, QLatin1Char('_'));
 
     // QDBusObjectPath could be a little bit easier to handle :-)
-    return QDBusObjectPath(_registry->dbusPath().path() + QLatin1String("component/") + dbusPath);
+    return QDBusObjectPath(QLatin1String("/component/") + dbusPath);
 }
 
 void Component::deactivateShortcuts(bool temporarily)
