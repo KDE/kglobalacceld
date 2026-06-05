@@ -12,21 +12,12 @@
 
 #include <QObject>
 
-/**
- * @internal
- *
- * The KGlobalAccel private class handles grabbing of global keys,
- * and notification of when these keys are pressed.
- */
 class KGlobalAccelImpl : public KGlobalAccelInterface
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.kde.kglobalaccel5.KGlobalAccelInterface" FILE "dummy.json")
-    Q_INTERFACES(KGlobalAccelInterface)
 
 public:
-    KGlobalAccelImpl(QObject *parent = nullptr);
-    ~KGlobalAccelImpl() override;
+    KGlobalAccelImpl();
 
     static KGlobalAccelImpl *instance();
 

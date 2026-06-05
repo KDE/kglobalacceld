@@ -44,12 +44,10 @@ public:
     Q_DECLARE_FLAGS(SetShortcutFlags, SetShortcutFlag)
     Q_FLAG(SetShortcutFlags)
 
-    explicit KGlobalAccelD(QObject *parent = nullptr);
+    explicit KGlobalAccelD(std::unique_ptr<KGlobalAccelInterface> &&interface);
     ~KGlobalAccelD() override;
 
     bool init();
-
-    KGlobalAccelInterface *interface() const;
 
 public Q_SLOTS:
 

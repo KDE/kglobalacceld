@@ -11,16 +11,12 @@
 class KGlobalAccelInterface::Private
 {
 public:
-    Private(GlobalShortcutsRegistry *owner)
-        : owner(owner)
-    {
-    }
     GlobalShortcutsRegistry *owner;
 };
 
-KGlobalAccelInterface::KGlobalAccelInterface(QObject *owner)
-    : QObject(owner)
-    , d(new Private(qobject_cast<GlobalShortcutsRegistry *>(owner)))
+KGlobalAccelInterface::KGlobalAccelInterface()
+    : QObject()
+    , d(new Private)
 {
 }
 
@@ -28,7 +24,6 @@ KGlobalAccelInterface::~KGlobalAccelInterface() = default;
 
 void KGlobalAccelInterface::setRegistry(GlobalShortcutsRegistry *registry)
 {
-    setParent(registry);
     d->owner = registry;
 }
 

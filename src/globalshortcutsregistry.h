@@ -25,11 +25,11 @@
 #include <chrono>
 
 #include "kglobalaccel_export.h"
+#include "kglobalaccel_interface.h"
 #include "shortcutkeystate.h"
 
 class Component;
 class GlobalShortcut;
-class KGlobalAccelInterface;
 
 /**
  * Global Shortcut Registry.
@@ -53,7 +53,7 @@ class KGLOBALACCEL_EXPORT GlobalShortcutsRegistry : public QObject
     Q_CLASSINFO("D-Bus Interface", "org.kde.KdedGlobalAccel.GlobalShortcutsRegistry")
 
 public:
-    GlobalShortcutsRegistry();
+    GlobalShortcutsRegistry(std::unique_ptr<KGlobalAccelInterface> &&interface);
     ~GlobalShortcutsRegistry() override;
 
     /**
@@ -117,8 +117,6 @@ public:
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
 
     bool unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut);
-
-    KGlobalAccelInterface *interface() const;
 
     /**
      * Generates the next available global shortcut serial. Global shortcut serials increase
@@ -195,7 +193,7 @@ private:
         });
     }
 
-    KGlobalAccelInterface *_manager = nullptr;
+    std::unique_ptr<KGlobalAccelInterface> _manager = nullptr;
 
     mutable KConfig _config;
     KConfig _state;

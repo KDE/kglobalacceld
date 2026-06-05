@@ -124,11 +124,6 @@ GlobalShortcut *KGlobalAccelDPrivate::findAction(const QString &_componentUnique
     return shortcut;
 }
 
-KGlobalAccelInterface * ::KGlobalAccelD::interface() const
-{
-    return d->m_registry->interface();
-}
-
 GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 {
     Q_ASSERT(actionId.size() >= 4);
@@ -158,10 +153,11 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
 Q_DECLARE_METATYPE(QStringList)
 
-KGlobalAccelD::KGlobalAccelD(QObject *parent)
-    : QObject(parent)
+KGlobalAccelD::KGlobalAccelD(std::unique_ptr<KGlobalAccelInterface> &&interface)
+    : QObject()
     , d(new KGlobalAccelDPrivate(this))
 {
+    d->m_registry = std::make_unique<GlobalShortcutsRegistry>(std::move(interface));
 }
 
 bool KGlobalAccelD::init()
@@ -176,8 +172,6 @@ bool KGlobalAccelD::init()
     qDBusRegisterMetaType<QList<KGlobalShortcutInfo>>();
     qDBusRegisterMetaType<KGlobalAccel::MatchType>();
 
-    d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
-    Q_ASSERT(d->m_registry);
     connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, &KGlobalAccelD::scheduleWriteSettings);
 
     d->writeoutTimer.setSingleShot(true);

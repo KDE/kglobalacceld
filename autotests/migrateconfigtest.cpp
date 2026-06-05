@@ -6,6 +6,7 @@
 
 #include <QTest>
 
+#include "dummy.h"
 #include "globalshortcutsregistry.h"
 
 class MigrateConfigTest : public QObject
@@ -54,7 +55,8 @@ private Q_SLOTS:
                     QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/kglobalaccel/org.kde.test.desktop"));
 
         // Creating the registry will migrate the shortcut config
-        GlobalShortcutsRegistry registry;
+        auto interface = std::make_unique<KGlobalAccelImpl>();
+        GlobalShortcutsRegistry registry(std::move(interface));
 
         // Compare actual with expected config
         KConfig actual(QStringLiteral("kglobalshortcutsrc"));

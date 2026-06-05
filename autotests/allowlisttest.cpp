@@ -20,8 +20,6 @@
 #include <QStandardPaths>
 #include <QTest>
 
-Q_IMPORT_PLUGIN(KGlobalAccelImpl)
-
 /**
  * Timeout for waiting for signals in tests (in milliseconds).
  */
@@ -43,7 +41,6 @@ void AllowListTest::initTestCase()
     QStandardPaths::setTestModeEnabled(true);
     QCoreApplication::setApplicationName(QStringLiteral("allowlisttest"));
     QCoreApplication::setOrganizationName(QStringLiteral("kde"));
-    qputenv("KGLOBALACCELD_PLATFORM", "dummy");
 }
 
 void AllowListTest::testAllowList_data()
@@ -88,11 +85,10 @@ void AllowListTest::testAllowList()
     // Ensure the DBus name is free before each init attempt.
     QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
-    auto daemon = std::make_unique<KGlobalAccelD>();
+    auto i = std::make_unique<KGlobalAccelImpl>();
+    auto interface = i.get();
+    auto daemon = std::make_unique<KGlobalAccelD>(std::move(i));
     QVERIFY(daemon->init());
-
-    KGlobalAccelImpl *interface = KGlobalAccelImpl::instance();
-    QVERIFY(interface);
 
     auto action = std::make_unique<QAction>();
     action->setObjectName(actionName);
@@ -141,11 +137,10 @@ void AllowListTest::testAllowListMultipleActions()
 
     QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
-    auto daemon = std::make_unique<KGlobalAccelD>();
+    auto i = std::make_unique<KGlobalAccelImpl>();
+    auto interface = i.get();
+    auto daemon = std::make_unique<KGlobalAccelD>(std::move(i));
     QVERIFY(daemon->init());
-
-    KGlobalAccelImpl *interface = KGlobalAccelImpl::instance();
-    QVERIFY(interface);
 
     auto actionOne = std::make_unique<QAction>();
     actionOne->setObjectName(allowedActions.at(0));

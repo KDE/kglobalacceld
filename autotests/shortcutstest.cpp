@@ -15,8 +15,6 @@
 #include <QSignalSpy>
 #include <QStandardPaths>
 
-Q_IMPORT_PLUGIN(KGlobalAccelImpl)
-
 class ShortcutsTest : public QObject
 {
     Q_OBJECT
@@ -42,11 +40,10 @@ void ShortcutsTest::initTestCase()
         QFile::remove(filePath);
     }
 
-    qputenv("KGLOBALACCELD_PLATFORM", "dummy");
-    m_globalacceld = std::make_unique<KGlobalAccelD>();
+    auto interface = std::make_unique<KGlobalAccelImpl>();
+    m_interface = interface.get();
+    m_globalacceld = std::make_unique<KGlobalAccelD>(std::move(interface));
     QVERIFY(m_globalacceld->init());
-    m_interface = KGlobalAccelImpl::instance();
-    QVERIFY(m_interface);
     m_globalaccel = KGlobalAccel::self();
     QVERIFY(m_globalaccel);
 }

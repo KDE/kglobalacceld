@@ -16,17 +16,12 @@
 
 class GlobalShortcutsRegistry;
 
-#define KGlobalAccelInterface_iid "org.kde.kglobalaccel5.KGlobalAccelInterface"
-
-/**
- * Abstract interface for plugins to implement
- */
 class KGLOBALACCELD_EXPORT KGlobalAccelInterface : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit KGlobalAccelInterface(QObject *parent);
+    explicit KGlobalAccelInterface();
     ~KGlobalAccelInterface() override;
 
 public:
@@ -66,7 +61,5 @@ protected:
     class Private;
     QScopedPointer<Private> d;
 };
-
-Q_DECLARE_INTERFACE(KGlobalAccelInterface, KGlobalAccelInterface_iid)
 
 #endif

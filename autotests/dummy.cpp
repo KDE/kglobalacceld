@@ -8,22 +8,8 @@
 
 #include "dummy.h"
 
-//----------------------------------------------------
-
-static KGlobalAccelImpl *s_interface = nullptr;
-
-KGlobalAccelImpl *KGlobalAccelImpl::instance()
-{
-    return s_interface;
-}
-
-KGlobalAccelImpl::KGlobalAccelImpl(QObject *parent)
-    : KGlobalAccelInterface(parent)
-{
-    s_interface = this;
-}
-
-KGlobalAccelImpl::~KGlobalAccelImpl()
+KGlobalAccelImpl::KGlobalAccelImpl()
+    : KGlobalAccelInterface()
 {
 }
 
@@ -41,5 +27,3 @@ bool KGlobalAccelImpl::checkAxisTriggered(int axis)
 {
     return axisTriggered(axis);
 }
-
-#include "moc_dummy.cpp"

@@ -20,67 +20,15 @@
 #include <KApplicationTrader>
 #include <KDesktopFile>
 #include <KFileUtils>
-#include <KPluginMetaData>
 #include <KSycoca>
 
 #include <QDBusConnection>
 #include <QDir>
-#include <QGuiApplication>
-#include <QJsonArray>
-#include <QPluginLoader>
 #include <QStandardPaths>
 
 #include <algorithm>
 
 using namespace Qt::StringLiterals;
-
-static bool checkPlatform(const QJsonObject &metadata, const QString &platformName)
-{
-    const QJsonArray platforms = metadata.value(QStringLiteral("MetaData")).toObject().value(QStringLiteral("platforms")).toArray();
-    return std::any_of(platforms.begin(), platforms.end(), [&platformName](const QJsonValue &value) {
-        return QString::compare(platformName, value.toString(), Qt::CaseInsensitive) == 0;
-    });
-}
-
-static KGlobalAccelInterface *loadPlugin(GlobalShortcutsRegistry *parent)
-{
-    QString platformName = QString::fromLocal8Bit(qgetenv("KGLOBALACCELD_PLATFORM"));
-    if (platformName.isEmpty()) {
-        platformName = QGuiApplication::platformName();
-    }
-
-    const QList<QStaticPlugin> staticPlugins = QPluginLoader::staticPlugins();
-    for (const QStaticPlugin &staticPlugin : staticPlugins) {
-        const QJsonObject metadata = staticPlugin.metaData();
-        if (metadata.value(QLatin1String("IID")) != QLatin1String(KGlobalAccelInterface_iid)) {
-            continue;
-        }
-        if (checkPlatform(metadata, platformName)) {
-            KGlobalAccelInterface *interface = qobject_cast<KGlobalAccelInterface *>(staticPlugin.instance());
-            if (interface) {
-                qCDebug(KGLOBALACCELD) << "Loaded a static plugin for platform" << platformName;
-                interface->setRegistry(parent);
-                return interface;
-            }
-        }
-    }
-
-    const QList<KPluginMetaData> candidates = KPluginMetaData::findPlugins(QStringLiteral("org.kde.kglobalacceld.platforms"));
-    for (const KPluginMetaData &candidate : candidates) {
-        QPluginLoader loader(candidate.fileName());
-        if (checkPlatform(loader.metaData(), platformName)) {
-            KGlobalAccelInterface *interface = qobject_cast<KGlobalAccelInterface *>(loader.instance());
-            if (interface) {
-                qCDebug(KGLOBALACCELD) << "Loaded plugin" << candidate.fileName() << "for platform" << platformName;
-                interface->setRegistry(parent);
-                return interface;
-            }
-        }
-    }
-
-    qCWarning(KGLOBALACCELD) << "Could not find any platform plugin";
-    return nullptr;
-}
 
 void GlobalShortcutsRegistry::migrateKHotkeys()
 {
@@ -273,12 +221,13 @@ void GlobalShortcutsRegistry::migrateConfig()
     _config.sync();
 }
 
-GlobalShortcutsRegistry::GlobalShortcutsRegistry()
+GlobalShortcutsRegistry::GlobalShortcutsRegistry(std::unique_ptr<KGlobalAccelInterface> &&interface)
     : QObject()
-    , _manager(loadPlugin(this))
+    , _manager(std::move(interface))
     , _config(QStringLiteral("kglobalshortcutsrc"), KConfig::SimpleConfig, QStandardPaths::GenericConfigLocation)
     , _state(QStringLiteral("kglobalshortcutsstaterc"), KConfig::SimpleConfig, QStandardPaths::GenericStateLocation)
 {
+    _manager->setRegistry(this);
     migrateKHotkeys();
     migrateConfig();
 
@@ -928,11 +877,6 @@ void GlobalShortcutsRegistry::refreshServices()
 
     // Look for new apps with shortcuts
     detectAppsWithShortcuts();
-}
-
-KGlobalAccelInterface *GlobalShortcutsRegistry::interface() const
-{
-    return _manager;
 }
 
 uint64_t GlobalShortcutsRegistry::nextSerial()
