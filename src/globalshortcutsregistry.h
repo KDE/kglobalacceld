@@ -25,7 +25,6 @@
 #include <chrono>
 
 #include "kglobalaccel_export.h"
-#include "kglobalaccel_interface.h"
 #include "shortcutkeystate.h"
 
 class Component;
@@ -53,7 +52,7 @@ class KGLOBALACCEL_EXPORT GlobalShortcutsRegistry : public QObject
     Q_CLASSINFO("D-Bus Interface", "org.kde.KdedGlobalAccel.GlobalShortcutsRegistry")
 
 public:
-    GlobalShortcutsRegistry(std::unique_ptr<KGlobalAccelInterface> &&interface);
+    GlobalShortcutsRegistry();
     ~GlobalShortcutsRegistry() override;
 
     /**
@@ -139,7 +138,7 @@ Q_SIGNALS:
 private:
     friend struct KGlobalAccelDPrivate;
     friend class Component;
-    friend class KGlobalAccelInterface;
+    friend class KGlobalAccelD;
 
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
     KServiceActionComponent *createServiceActionComponent(const QString &uniqueName);
@@ -192,8 +191,6 @@ private:
             return comp->uniqueName() == name;
         });
     }
-
-    std::unique_ptr<KGlobalAccelInterface> _manager = nullptr;
 
     mutable KConfig _config;
     KConfig _state;

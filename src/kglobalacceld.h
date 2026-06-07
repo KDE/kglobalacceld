@@ -11,7 +11,7 @@
 
 #include "kglobalacceld_export.h"
 
-#include "kglobalaccel_interface.h"
+#include "shortcutkeystate.h"
 #include <kglobalshortcutinfo.h>
 
 #include <KGlobalAccel>
@@ -44,10 +44,15 @@ public:
     Q_DECLARE_FLAGS(SetShortcutFlags, SetShortcutFlag)
     Q_FLAG(SetShortcutFlags)
 
-    explicit KGlobalAccelD(std::unique_ptr<KGlobalAccelInterface> &&interface);
+    explicit KGlobalAccelD();
     ~KGlobalAccelD() override;
 
     bool init();
+
+    bool keyEvent(int keyQt, ShortcutKeyState state);
+    bool pointerPressed(Qt::MouseButtons pointerButtons);
+    bool axisTriggered(int axis);
+    void resetModifierOnlyState();
 
 public Q_SLOTS:
 

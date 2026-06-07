@@ -11,7 +11,6 @@
  * specified in the allow-list are activated.
  */
 
-#include "dummy.h"
 #include "kglobalacceld.h"
 
 #include <QDBusConnection>
@@ -85,9 +84,7 @@ void AllowListTest::testAllowList()
     // Ensure the DBus name is free before each init attempt.
     QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
-    auto i = std::make_unique<KGlobalAccelImpl>();
-    auto interface = i.get();
-    auto daemon = std::make_unique<KGlobalAccelD>(std::move(i));
+    auto daemon = std::make_unique<KGlobalAccelD>();
     QVERIFY(daemon->init());
 
     auto action = std::make_unique<QAction>();
@@ -98,8 +95,8 @@ void AllowListTest::testAllowList()
 
     QSignalSpy spy(action.get(), &QAction::triggered);
 
-    interface->checkKeyEvent(shortcut[0].toCombined(), ShortcutKeyState::Pressed);
-    interface->checkKeyEvent(shortcut[0].toCombined(), ShortcutKeyState::Released);
+    daemon->keyEvent(shortcut[0].toCombined(), ShortcutKeyState::Pressed);
+    daemon->keyEvent(shortcut[0].toCombined(), ShortcutKeyState::Released);
 
     if (expectTriggered) {
         QVERIFY(spy.wait());
@@ -137,9 +134,7 @@ void AllowListTest::testAllowListMultipleActions()
 
     QDBusConnection::sessionBus().unregisterService(QStringLiteral("org.kde.kglobalaccel"));
 
-    auto i = std::make_unique<KGlobalAccelImpl>();
-    auto interface = i.get();
-    auto daemon = std::make_unique<KGlobalAccelD>(std::move(i));
+    auto daemon = std::make_unique<KGlobalAccelD>();
     QVERIFY(daemon->init());
 
     auto actionOne = std::make_unique<QAction>();
@@ -161,9 +156,9 @@ void AllowListTest::testAllowListMultipleActions()
     QSignalSpy spyTwo(actionTwo.get(), &QAction::triggered);
     QSignalSpy spyThree(actionThree.get(), &QAction::triggered);
 
-    const auto triggerShortcut = [interface](const QKeySequence &sequence) {
-        interface->checkKeyEvent(sequence[0].toCombined(), ShortcutKeyState::Pressed);
-        interface->checkKeyEvent(sequence[0].toCombined(), ShortcutKeyState::Released);
+    const auto triggerShortcut = [&daemon](const QKeySequence &sequence) {
+        daemon->keyEvent(sequence[0].toCombined(), ShortcutKeyState::Pressed);
+        daemon->keyEvent(sequence[0].toCombined(), ShortcutKeyState::Released);
     };
 
     // Allow event loop to register shortcuts before injecting key events.

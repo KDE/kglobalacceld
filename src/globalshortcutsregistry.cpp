@@ -11,7 +11,6 @@
 #include "component.h"
 #include "globalshortcut.h"
 #include "globalshortcutcontext.h"
-#include "kglobalaccel_interface.h"
 #include "kglobalshortcutinfo_p.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
@@ -221,13 +220,11 @@ void GlobalShortcutsRegistry::migrateConfig()
     _config.sync();
 }
 
-GlobalShortcutsRegistry::GlobalShortcutsRegistry(std::unique_ptr<KGlobalAccelInterface> &&interface)
+GlobalShortcutsRegistry::GlobalShortcutsRegistry()
     : QObject()
-    , _manager(std::move(interface))
     , _config(QStringLiteral("kglobalshortcutsrc"), KConfig::SimpleConfig, QStandardPaths::GenericConfigLocation)
     , _state(QStringLiteral("kglobalshortcutsstaterc"), KConfig::SimpleConfig, QStandardPaths::GenericStateLocation)
 {
-    _manager->setRegistry(this);
     migrateKHotkeys();
     migrateConfig();
 
@@ -779,9 +776,6 @@ void GlobalShortcutsRegistry::detectAppsWithShortcuts()
 
 bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcut *shortcut)
 {
-    if (!_manager) {
-        return false;
-    }
     if (key.isEmpty()) {
         qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Attempt to register key 0.";
         return false;
@@ -799,9 +793,6 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
 
 bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut)
 {
-    if (!_manager) {
-        return false;
-    }
     if (!_active_keys.contains(key, shortcut)) {
         // The shortcut doesn't own the key or the key isn't grabbed
         return false;

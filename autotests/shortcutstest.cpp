@@ -7,7 +7,6 @@
 #include <QTest>
 
 #include "component.h"
-#include "dummy.h"
 #include "kglobalacceld.h"
 
 #include <QFile>
@@ -35,7 +34,6 @@ private:
     void sendKeyCombinationPressAndRelease(QKeyCombination keyCombination);
 
     std::unique_ptr<KGlobalAccelD> m_globalacceld;
-    KGlobalAccelImpl *m_interface; // implementation of KGlobalAccelInterface * for this test
     KGlobalAccel *m_globalaccel;
 };
 
@@ -67,24 +65,24 @@ void ShortcutsTest::sendKeyCombination(QKeyCombination keyCombination, ShortcutK
         Qt::KeyboardModifiers formerModifiers;
         for (const auto &[modifier, key] : modifiers) {
             if (keyCombination.keyboardModifiers() & modifier) {
-                m_interface->checkKeyEvent((formerModifiers | key).toCombined(), state);
+                m_globalacceld->keyEvent((formerModifiers | key).toCombined(), state);
                 formerModifiers |= modifier;
             }
         }
 
         if (keyCombination.key()) {
-            m_interface->checkKeyEvent(keyCombination.toCombined(), state);
+            m_globalacceld->keyEvent(keyCombination.toCombined(), state);
         }
     } else {
         if (keyCombination.key()) {
-            m_interface->checkKeyEvent(keyCombination.toCombined(), state);
+            m_globalacceld->keyEvent(keyCombination.toCombined(), state);
         }
 
         Qt::KeyboardModifiers formerModifiers = keyCombination.keyboardModifiers();
         for (const auto &[modifier, key] : modifiers) {
             if (formerModifiers & modifier) {
                 formerModifiers &= ~modifier;
-                m_interface->checkKeyEvent((formerModifiers | key).toCombined(), state);
+                m_globalacceld->keyEvent((formerModifiers | key).toCombined(), state);
             }
         }
     }
@@ -104,9 +102,7 @@ void ShortcutsTest::initTestCase()
         QFile::remove(filePath);
     }
 
-    auto interface = std::make_unique<KGlobalAccelImpl>();
-    m_interface = interface.get();
-    m_globalacceld = std::make_unique<KGlobalAccelD>(std::move(interface));
+    m_globalacceld = std::make_unique<KGlobalAccelD>();
     QVERIFY(m_globalacceld->init());
     m_globalaccel = KGlobalAccel::self();
     QVERIFY(m_globalaccel);
@@ -225,16 +221,16 @@ void ShortcutsTest::testShortcuts()
     for (const auto &event : events) {
         switch (event.first) {
         case QEvent::KeyPress:
-            m_interface->checkKeyEvent(event.second, ShortcutKeyState::Pressed);
+            m_globalacceld->keyEvent(event.second, ShortcutKeyState::Pressed);
             break;
         case QEvent::KeyRelease:
-            m_interface->checkKeyEvent(event.second, ShortcutKeyState::Released);
+            m_globalacceld->keyEvent(event.second, ShortcutKeyState::Released);
             break;
         case QEvent::MouseButtonPress:
-            m_interface->checkPointerPressed(static_cast<Qt::MouseButtons>(event.second));
+            m_globalacceld->pointerPressed(static_cast<Qt::MouseButtons>(event.second));
             break;
         case QEvent::Wheel:
-            m_interface->checkAxisTriggered(event.second);
+            m_globalacceld->axisTriggered(event.second);
             break;
         default:
             qFatal("Unknown event type");

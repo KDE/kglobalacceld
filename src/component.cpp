@@ -8,7 +8,6 @@
 
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
-#include "kglobalaccel_interface.h"
 #include "logging.h"
 #include "sequencehelpers_p.h"
 

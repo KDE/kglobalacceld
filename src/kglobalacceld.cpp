@@ -154,11 +154,11 @@ GlobalShortcut *KGlobalAccelDPrivate::addAction(const QStringList &actionId)
 
 Q_DECLARE_METATYPE(QStringList)
 
-KGlobalAccelD::KGlobalAccelD(std::unique_ptr<KGlobalAccelInterface> &&interface)
+KGlobalAccelD::KGlobalAccelD()
     : QObject()
     , d(new KGlobalAccelDPrivate(this))
 {
-    d->m_registry = std::make_unique<GlobalShortcutsRegistry>(std::move(interface));
+    d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
 }
 
 bool KGlobalAccelD::init()
@@ -191,6 +191,26 @@ bool KGlobalAccelD::init()
     }
 
     return true;
+}
+
+bool KGlobalAccelD::keyEvent(int keyQt, ShortcutKeyState state)
+{
+    return d->m_registry->keyEvent(keyQt, state);
+}
+
+bool KGlobalAccelD::pointerPressed(Qt::MouseButtons pointerButtons)
+{
+    return d->m_registry->pointerPressed(pointerButtons);
+}
+
+bool KGlobalAccelD::axisTriggered(int axis)
+{
+    return d->m_registry->axisTriggered(axis);
+}
+
+void KGlobalAccelD::resetModifierOnlyState()
+{
+    return d->m_registry->resetModifierOnlyState();
 }
 
 KGlobalAccelD::~KGlobalAccelD()
