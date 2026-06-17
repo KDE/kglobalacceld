@@ -28,6 +28,10 @@ private Q_SLOTS:
     void testBacktab();
     void testEmptyShortcut_data();
     void testEmptyShortcut();
+    void testHeldShortcut_data();
+    void testHeldShortcut();
+    void testBacktabRelease_data();
+    void testBacktabRelease();
 
 private:
     void sendKeyCombination(QKeyCombination keyCombination, ShortcutKeyState state);
@@ -356,6 +360,99 @@ void ShortcutsTest::testEmptyShortcut()
     QFETCH(QList<QKeySequence>, shortcuts);
     QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), shortcuts));
     QTEST(m_globalaccel->shortcut(action.get()), "expected");
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testHeldShortcut_data()
+{
+    QTest::addColumn<QKeySequence>("shortcut");
+    QTest::addColumn<QList<int>>("keysTypedBefore");
+    QTest::addColumn<QList<int>>("keysHeldBefore");
+
+    QTest::newRow("unrelated key") << QKeySequence(Qt::Key_F13) << QList<int>{} << QList<int>{};
+    QTest::newRow("unrelated key held before shortcut") << QKeySequence(Qt::Key_F13) << QList<int>{} << QList<int>{Qt::Key_A};
+    QTest::newRow("unrelated keys typed before shortcut") << QKeySequence(Qt::Key_F13) << QList<int>{Qt::Key_A, Qt::Key_B} << QList<int>{};
+    QTest::newRow("mod+key") << QKeySequence(Qt::ControlModifier | Qt::Key_F13) << QList<int>{Qt::Key_A} << QList<int>{};
+}
+
+void ShortcutsTest::testHeldShortcut()
+{
+    QFETCH(QKeySequence, shortcut);
+    QFETCH(QList<int>, keysTypedBefore);
+    QFETCH(QList<int>, keysHeldBefore);
+
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("HeldShortcutTest"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), shortcut));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    for (int key : std::as_const(keysTypedBefore)) {
+        sendKeyCombinationPressAndRelease(static_cast<Qt::Key>(key));
+    }
+    for (int key : std::as_const(keysHeldBefore)) {
+        sendKeyCombination(static_cast<Qt::Key>(key), ShortcutKeyState::Pressed);
+    }
+
+    // Hold the shortcut
+    sendKeyCombination(shortcut[0], ShortcutKeyState::Pressed);
+    QVERIFY(activeSpy.wait());
+    QCOMPARE(activeSpy.count(), 1);
+    QCOMPARE(activeSpy.last().at(1).toBool(), true);
+
+    // Releasing keys that are not the shortcut's key must not end it
+    for (int key : std::as_const(keysHeldBefore)) {
+        sendKeyCombination(static_cast<Qt::Key>(key), ShortcutKeyState::Released);
+    }
+    for (int key : std::as_const(keysTypedBefore) + QList<int>{Qt::Key_C}) {
+        sendKeyCombinationPressAndRelease(static_cast<Qt::Key>(key));
+    }
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeSpy.count(), 1);
+
+    // Releasing the shortcut ends it
+    sendKeyCombination(shortcut[0], ShortcutKeyState::Released);
+    QVERIFY(activeSpy.wait());
+    QCOMPARE(activeSpy.count(), 2);
+    QCOMPARE(activeSpy.last().at(1).toBool(), false);
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testBacktabRelease_data()
+{
+    QTest::addColumn<Events>("events");
+
+    QTest::newRow("Shift released last") << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Shift)
+                                                      << std::make_pair(QEvent::KeyPress, (Qt::ShiftModifier | Qt::Key_Backtab).toCombined())
+                                                      << std::make_pair(QEvent::KeyRelease, (Qt::ShiftModifier | Qt::Key_Backtab).toCombined())
+                                                      << std::make_pair(QEvent::KeyRelease, (Qt::ShiftModifier | Qt::Key_Shift).toCombined()));
+    // The release arrives as Tab here, so this order worked before too. Checks that it keeps working.
+    QTest::newRow("Shift released first") << (Events() << std::make_pair(QEvent::KeyPress, Qt::Key_Shift)
+                                                       << std::make_pair(QEvent::KeyPress, (Qt::ShiftModifier | Qt::Key_Backtab).toCombined())
+                                                       << std::make_pair(QEvent::KeyRelease, (Qt::ShiftModifier | Qt::Key_Shift).toCombined())
+                                                       << std::make_pair(QEvent::KeyRelease, Qt::Key_Tab));
+    QTest::newRow("Backtab without Shift") << (Events()
+                                               << std::make_pair(QEvent::KeyPress, Qt::Key_Backtab) << std::make_pair(QEvent::KeyRelease, Qt::Key_Backtab));
+}
+
+void ShortcutsTest::testBacktabRelease()
+{
+    QFETCH(Events, events);
+
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("BacktabReleaseTest"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::ShiftModifier | Qt::Key_Tab)));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    for (const auto &event : std::as_const(events)) {
+        m_globalacceld->keyEvent(event.second, event.first == QEvent::KeyPress ? ShortcutKeyState::Pressed : ShortcutKeyState::Released);
+    }
+
+    // Backtab is normalized to Shift+Tab, its release must still end the shortcut
+    QTRY_COMPARE(activeSpy.count(), 2);
+    QCOMPARE(activeSpy.at(0).at(1).toBool(), true);
+    QCOMPARE(activeSpy.at(1).at(1).toBool(), false);
 
     m_globalaccel->removeAllShortcuts(action.get());
 }

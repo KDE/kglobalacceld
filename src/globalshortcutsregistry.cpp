@@ -382,6 +382,12 @@ static void correctKeyEvent(int &keyQt)
         keySym = Qt::Key_Print;
         keyMod |= Qt::AltModifier;
         break;
+    case Qt::Key_Backtab:
+        // Shift+Tab arrives as Backtab, but sequences are normalized to Shift+Tab. Do the same
+        // here so key events can be compared to the keys of held shortcuts.
+        keySym = Qt::Key_Tab;
+        keyMod |= Qt::ShiftModifier;
+        break;
     }
     keyQt = keySym | keyMod;
 }
@@ -431,9 +437,12 @@ bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
     }
 
     if (state == ShortcutKeyState::Released) {
-        if (m_lastShortcut) {
+        // Only end the shortcut when the key that triggered it is released. Releasing an
+        // unrelated key while the shortcut is held (e.g. push-to-talk) must not interrupt it.
+        if (m_lastShortcut && key == m_lastShortcutKey) {
             m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, state);
             m_lastShortcut = nullptr;
+            m_lastShortcutKey = 0;
         }
     }
 
@@ -533,6 +542,9 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
     // Invoke the action
     shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state, activationToken);
     m_lastShortcut = shortcut;
+    // The sequence may still contain unrelated keys typed before the shortcut, so only
+    // remember the last key, which is the one that is being held down.
+    m_lastShortcutKey = normalizedSequence[normalizedSequence.count() - 1].key();
 
     return true;
 }
@@ -808,6 +820,7 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
     if (shortcut && shortcut == m_lastShortcut) {
         m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
         m_lastShortcut = nullptr;
+        m_lastShortcutKey = 0;
     }
 
     _active_keys.remove(key, shortcut);
