@@ -237,6 +237,7 @@ private:
     bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
     GlobalShortcut *m_lastShortcut = nullptr;
+    int m_lastShortcutKey = 0;
     QTimer m_refreshServicesTimer;
     uint64_t m_serial = 0;
 };
