@@ -87,9 +87,6 @@ install(FILES  "${CMAKE_CURRENT_BINARY_DIR}/KGlobalAccelDConfig.cmake"
 install(EXPORT KGlobalAccelDTargets DESTINATION "${CMAKECONFIG_INSTALL_DIR}" FILE KGlobalAccelDTargets.cmake NAMESPACE K:: )
 
 
-install(FILES ${kglobalaccel_version_header}
-        DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF}/KGlobalAccel COMPONENT Devel)
-
 ecm_qt_install_logging_categories(
     EXPORT KGLOBALACCELD
     FILE kglobalacceld.categories
