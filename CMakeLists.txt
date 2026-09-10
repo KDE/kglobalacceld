@@ -4,7 +4,7 @@ project(kglobalacceld)
 
 set(PROJECT_VERSION "6.7.80")
 
-set(QT_MIN_VERSION "6.10.0")
+set(QT_MIN_VERSION "6.11.0")
 set(KF6_MIN_VERSION "6.30.0")
 
 set(CMAKE_CXX_STANDARD 20)
