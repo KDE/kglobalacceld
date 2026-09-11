@@ -37,7 +37,6 @@ target_link_libraries(KGlobalAccelD
         KF6::GlobalAccel
     PRIVATE
         Qt6::DBus
-        KF6::WindowSystem # KKeyServer
         KF6::CoreAddons   # KAboutData
         KF6::ConfigCore
         KF6::Service
