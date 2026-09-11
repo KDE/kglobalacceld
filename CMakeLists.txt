@@ -41,7 +41,6 @@ find_package(Qt6 ${QT_MIN_VERSION} CONFIG REQUIRED DBus Gui)
 
 find_package(KF6Config ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6CoreAddons ${KF6_MIN_VERSION} REQUIRED)
-find_package(KF6WindowSystem ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6GlobalAccel ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6Service ${KF6_MIN_VERSION} REQUIRED)
 find_package(KF6KIO ${KF6_MIN_VERSION} REQUIRED)
