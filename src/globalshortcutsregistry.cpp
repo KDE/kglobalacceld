@@ -362,6 +362,32 @@ bool GlobalShortcutsRegistry::isShortcutAvailable(const QKeySequence &shortcut, 
     });
 }
 
+void GlobalShortcutsRegistry::releaseHeldKey(int key)
+{
+    const QList<GlobalShortcut *> released = m_heldShortcuts.values(key);
+    if (released.isEmpty()) {
+        return;
+    }
+    m_heldShortcuts.remove(key);
+
+    for (GlobalShortcut *shortcut : released) {
+        const bool stillHeld = std::find(m_heldShortcuts.cbegin(), m_heldShortcuts.cend(), shortcut) != m_heldShortcuts.cend();
+        if (!stillHeld) {
+            shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Released);
+        }
+    }
+}
+
+void GlobalShortcutsRegistry::releaseHeldShortcut(GlobalShortcut *shortcut)
+{
+    const qsizetype removed = m_heldShortcuts.removeIf([shortcut](QMultiHash<int, GlobalShortcut *>::iterator it) {
+        return it.value() == shortcut;
+    });
+    if (removed) {
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Released);
+    }
+}
+
 static void correctKeyEvent(int &keyQt)
 {
     int keyMod = keyQt & Qt::KeyboardModifierMask;
@@ -398,6 +424,12 @@ bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
     const int key = keyQt & ~Qt::KeyboardModifierMask;
     const Qt::KeyboardModifiers modifiers = static_cast<Qt::KeyboardModifiers>(keyQt & Qt::KeyboardModifierMask);
     bool handled = false;
+
+    if (state == ShortcutKeyState::Pressed && key) {
+        // If this key is still pressed for a held shortcut, its release got lost
+        releaseHeldKey(key);
+    }
+
     switch (key) {
     case 0:
         // Invalid key code
@@ -437,13 +469,7 @@ bool GlobalShortcutsRegistry::keyEvent(int keyQt, ShortcutKeyState state)
     }
 
     if (state == ShortcutKeyState::Released) {
-        // Only end the shortcut when the key that triggered it is released. Releasing an
-        // unrelated key while the shortcut is held (e.g. push-to-talk) must not interrupt it.
-        if (m_lastShortcut && key == m_lastShortcutKey) {
-            m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, state);
-            m_lastShortcut = nullptr;
-            m_lastShortcutKey = 0;
-        }
+        releaseHeldKey(key);
     }
 
     return handled;
@@ -528,20 +554,19 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
     data.append(shortcut->context()->component()->friendlyName());
     data.append(shortcut->friendlyName());
 
-    if (m_lastShortcut && m_lastShortcut != shortcut) {
-        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
-    }
-
     if (!isShortcutAllowed(shortcut)) {
         return false;
     }
 
     // Invoke the action
     shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
-    m_lastShortcut = shortcut;
+
     // The sequence may still contain unrelated keys typed before the shortcut, so only
-    // remember the last key, which is the one that is being held down.
-    m_lastShortcutKey = normalizedSequence[normalizedSequence.count() - 1].key();
+    // record the last key, which is the one that is being held down.
+    const int heldKey = normalizedSequence[normalizedSequence.count() - 1].key();
+    if (!m_heldShortcuts.contains(heldKey, shortcut)) {
+        m_heldShortcuts.insert(heldKey, shortcut);
+    }
 
     return true;
 }
@@ -814,11 +839,7 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
         return false;
     }
 
-    if (shortcut && shortcut == m_lastShortcut) {
-        m_lastShortcut->context()->component()->emitGlobalShortcutEvent(*m_lastShortcut, ShortcutKeyState::Released);
-        m_lastShortcut = nullptr;
-        m_lastShortcutKey = 0;
-    }
+    releaseHeldShortcut(shortcut);
 
     _active_keys.remove(key, shortcut);
     return true;

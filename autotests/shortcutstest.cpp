@@ -32,10 +32,19 @@ private Q_SLOTS:
     void testHeldShortcut();
     void testBacktabRelease_data();
     void testBacktabRelease();
+    void testShortcutDuringHeldShortcut_data();
+    void testShortcutDuringHeldShortcut();
+    void testOverlappingHeldShortcuts();
+    void testShortcutWithTwoHeldKeys_data();
+    void testShortcutWithTwoHeldKeys();
+    void testHeldShortcutUnregistered();
+    void testLostRelease();
+    void testLostReleaseWithoutModifier();
 
 private:
     void sendKeyCombination(QKeyCombination keyCombination, ShortcutKeyState state);
     void sendKeyCombinationPressAndRelease(QKeyCombination keyCombination);
+    static QList<bool> activeStates(const QSignalSpy &spy, QAction *action);
 
     std::unique_ptr<KGlobalAccelD> m_globalacceld;
     KGlobalAccel *m_globalaccel;
@@ -96,6 +105,17 @@ void ShortcutsTest::sendKeyCombinationPressAndRelease(QKeyCombination keyCombina
 {
     sendKeyCombination(keyCombination, ShortcutKeyState::Pressed);
     sendKeyCombination(keyCombination, ShortcutKeyState::Released);
+}
+
+QList<bool> ShortcutsTest::activeStates(const QSignalSpy &spy, QAction *action)
+{
+    QList<bool> states;
+    for (const QList<QVariant> &arguments : spy) {
+        if (arguments.at(0).value<QAction *>() == action) {
+            states.append(arguments.at(1).toBool());
+        }
+    }
+    return states;
 }
 
 void ShortcutsTest::initTestCase()
@@ -453,6 +473,164 @@ void ShortcutsTest::testBacktabRelease()
     QTRY_COMPARE(activeSpy.count(), 2);
     QCOMPARE(activeSpy.at(0).at(1).toBool(), true);
     QCOMPARE(activeSpy.at(1).at(1).toBool(), false);
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testShortcutDuringHeldShortcut_data()
+{
+    QTest::addColumn<QKeySequence>("secondShortcut");
+
+    QTest::newRow("key") << QKeySequence(Qt::Key_F14);
+    QTest::newRow("mod+key") << QKeySequence(Qt::ControlModifier | Qt::Key_F14);
+    QTest::newRow("modifier-only Meta") << QKeySequence(Qt::MetaModifier);
+}
+
+void ShortcutsTest::testShortcutDuringHeldShortcut()
+{
+    QFETCH(QKeySequence, secondShortcut);
+
+    auto held = std::make_unique<QAction>();
+    held->setObjectName(QStringLiteral("HeldDuringOtherShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(held.get(), QKeySequence(Qt::Key_F13)));
+    auto other = std::make_unique<QAction>();
+    other->setObjectName(QStringLiteral("OtherDuringHeldShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(other.get(), secondShortcut));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, held.get()), QList<bool>{true});
+
+    sendKeyCombinationPressAndRelease(secondShortcut[0]);
+    QTRY_COMPARE(activeStates(activeSpy, other.get()), (QList<bool>{true, false}));
+    QCOMPARE(activeStates(activeSpy, held.get()), QList<bool>{true});
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, held.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(held.get());
+    m_globalaccel->removeAllShortcuts(other.get());
+}
+
+void ShortcutsTest::testOverlappingHeldShortcuts()
+{
+    auto first = std::make_unique<QAction>();
+    first->setObjectName(QStringLiteral("FirstOverlappingShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(first.get(), QKeySequence(Qt::Key_F13)));
+    auto second = std::make_unique<QAction>();
+    second->setObjectName(QStringLiteral("SecondOverlappingShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(second.get(), QKeySequence(Qt::Key_F14)));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    sendKeyCombination(Qt::Key_F14, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, second.get()), QList<bool>{true});
+    QCOMPARE(activeStates(activeSpy, first.get()), QList<bool>{true});
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, first.get()), (QList<bool>{true, false}));
+    QCOMPARE(activeStates(activeSpy, second.get()), QList<bool>{true});
+
+    sendKeyCombination(Qt::Key_F14, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, second.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(first.get());
+    m_globalaccel->removeAllShortcuts(second.get());
+}
+
+void ShortcutsTest::testShortcutWithTwoHeldKeys_data()
+{
+    QTest::addColumn<bool>("releaseFirstPressedFirst");
+
+    QTest::newRow("released in press order") << true;
+    QTest::newRow("released in reverse order") << false;
+}
+
+void ShortcutsTest::testShortcutWithTwoHeldKeys()
+{
+    QFETCH(bool, releaseFirstPressedFirst);
+
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("ShortcutWithTwoHeldKeys"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QList<QKeySequence>{QKeySequence(Qt::Key_F13), QKeySequence(Qt::Key_F14)}));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    sendKeyCombination(Qt::Key_F14, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    sendKeyCombination(releaseFirstPressedFirst ? Qt::Key_F13 : Qt::Key_F14, ShortcutKeyState::Released);
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    sendKeyCombination(releaseFirstPressedFirst ? Qt::Key_F14 : Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testHeldShortcutUnregistered()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("HeldShortcutUnregistered"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::Key_F13)));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    QVERIFY(m_globalaccel->setShortcut(action.get(), {QKeySequence(Qt::Key_F15)}, KGlobalAccel::NoAutoloading));
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testLostRelease()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("LostReleaseShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::Key_F13)));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    // The release got lost, pressing the key again restarts the shortcut
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true}));
+
+    // Autorepeat doesn't end the shortcut
+    m_globalacceld->keyEvent(Qt::Key_F13, ShortcutKeyState::Repeated);
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true}));
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testLostReleaseWithoutModifier()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("LostReleaseWithoutModifierShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::ControlModifier | Qt::Key_F13)));
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::ControlModifier | Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    // F13 without Ctrl ends the shortcut without starting it again
+    m_globalacceld->keyEvent(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    m_globalacceld->keyEvent(Qt::Key_F13, ShortcutKeyState::Released);
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
 
     m_globalaccel->removeAllShortcuts(action.get());
 }
