@@ -238,9 +238,21 @@ private:
      */
     bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
+    /**
+     * Mark @a key as released and emit release events for the shortcuts that no longer
+     * have any of their keys pressed.
+     */
+    void releaseHeldKey(int key);
+
+    /**
+     * Emit a release event for @a shortcut if it is currently held.
+     */
+    void releaseHeldShortcut(GlobalShortcut *shortcut);
+
+    // Pressed keys that triggered a shortcut, mapped to the shortcuts they hold
+    QMultiHash<int, GlobalShortcut *> m_heldShortcuts;
+
     std::function<QString(const QString &, KGlobalAccelD::ActivationTokenUsage)> m_activationTokenCreator;
-    GlobalShortcut *m_lastShortcut = nullptr;
-    int m_lastShortcutKey = 0;
     QTimer m_refreshServicesTimer;
     uint64_t m_serial = 0;
 };
