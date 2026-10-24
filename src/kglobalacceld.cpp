@@ -230,6 +230,7 @@ bool KGlobalAccelD::init()
     qDBusRegisterMetaType<QList<QDBusObjectPath>>();
     qDBusRegisterMetaType<QList<QStringList>>();
     qDBusRegisterMetaType<QStringList>();
+    qDBusRegisterMetaType<KGlobalShortcutTrigger>();
     qDBusRegisterMetaType<KGlobalShortcutInfo>();
     qDBusRegisterMetaType<QList<KGlobalShortcutInfo>>();
     qDBusRegisterMetaType<KGlobalShortcutInfoExt>();
@@ -680,6 +681,30 @@ void KGlobalAccelD::setForeignShortcutKeys(const QStringList &actionId, const QS
 void KGlobalAccelPrivateSettings::setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys)
 {
     d->q->setForeignShortcutKeys(actionId, keys);
+}
+
+void KGlobalAccelPrivateSettings::setForeignShortcutTriggers(const QStringList &actionId, const QString &triggerType, const QSet<QString> &triggerParamStrings)
+{
+    qCDebug(KGLOBALACCELD) << "setting foreign" << triggerType << "triggers for" << actionId << "to" << triggerParamStrings;
+
+    GlobalShortcut *shortcut = d->findAction(actionId);
+    if (!shortcut) {
+        return;
+    }
+
+    QSet<KGlobalShortcutTrigger> triggers;
+    triggers.reserve(triggerParamStrings.size());
+    for (const QString &triggerParamString : triggerParamStrings) {
+        triggers.insert(KGlobalShortcutTrigger(triggerType, triggerParamString));
+    }
+
+    // now we are actually changing the triggers of the action (of this trigger type)
+    shortcut->setTriggers(triggerType, triggers, GlobalShortcut::FromOverride);
+
+    d->scheduleWriteSettings();
+
+    // do not emit a signal like yourShortcutsChanged - KGlobalAccel doesn't deal with triggers
+    // at the time of writing
 }
 
 bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,

@@ -85,6 +85,7 @@ public:
 } // namespace KGlobalShortcutTriggerTypes
 
 class KGlobalShortcutTriggerPrivate;
+class QDBusArgument;
 
 /*!
  * \class KGlobalShortcutTrigger
@@ -232,6 +233,9 @@ struct std::hash<KGlobalShortcutTrigger> {
         return std::hash<QString>{}(t.toString());
     }
 };
+
+KGLOBALACCELD_EXPORT QDBusArgument &operator<<(QDBusArgument &argument, const KGlobalShortcutTrigger &trigger);
+KGLOBALACCELD_EXPORT const QDBusArgument &operator>>(const QDBusArgument &argument, KGlobalShortcutTrigger &trigger);
 
 Q_DECLARE_METATYPE(KGlobalShortcutTrigger)
 

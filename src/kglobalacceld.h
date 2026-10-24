@@ -284,6 +284,7 @@ public Q_SLOTS:
 
     // this is used if application A wants to change shortcuts of application B
     Q_SCRIPTABLE void setForeignShortcutKeys(const QStringList &actionId, const QSet<QKeySequence> &keys);
+    Q_SCRIPTABLE void setForeignShortcutTriggers(const QStringList &actionId, const QString &triggerType, const QSet<QString> &triggerParamStrings);
 
 private:
     KGlobalAccelDPrivate *d;

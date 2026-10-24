@@ -9,6 +9,8 @@
 
 #include "kglobalacceld_export.h"
 
+#include "kglobalshortcuttrigger.h"
+
 #include <KGlobalShortcutInfo>
 #include <QString>
 #include <memory>
@@ -42,6 +44,15 @@ public:
     //! Returns the unique name of the shortcut's inverse action within the same component, or an empty string if none is set.
     QString inverseAction() const;
 
+    //! Returns a list of trigger types for which either assigned or default triggers (or both) exist.
+    QStringList triggerTypes() const;
+
+    //! Returns a list of currently assigned triggers of \a triggerType associated with this shortcut.
+    QSet<KGlobalShortcutTrigger> triggers(const QString &triggerType) const;
+
+    //! Returns a list of default triggers of \a triggerType associated with this shortcut.
+    QSet<KGlobalShortcutTrigger> defaultTriggers(const QString &triggerType) const;
+
     KGlobalShortcutInfoExt(const KGlobalShortcutInfoExt &other);
     KGlobalShortcutInfoExt(KGlobalShortcutInfoExt &&other);
     KGlobalShortcutInfoExt &operator=(const KGlobalShortcutInfoExt &other);
@@ -63,6 +74,10 @@ public:
     KGlobalShortcutInfoExt build();
 
     KGlobalShortcutInfoExtBuilder &setInverseAction(const QString &inverseActionUniqueName);
+
+    KGlobalShortcutInfoExtBuilder &setTriggers(const QString &triggerType, //
+                                               const QSet<KGlobalShortcutTrigger> &assignedTriggers,
+                                               const QSet<KGlobalShortcutTrigger> &defaultTriggers);
 
 private:
     std::unique_ptr<KGlobalShortcutInfoExtPrivate> d;

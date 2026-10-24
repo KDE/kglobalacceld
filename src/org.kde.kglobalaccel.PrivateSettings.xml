@@ -18,5 +18,10 @@
             <arg name="keys" type="a(ai)" direction="in"/>
             <annotation name="org.qtproject.QtDBus.QtTypeName.In1" value="QList&lt;QKeySequence&gt;"/>
         </method>
+        <method name="setForeignShortcutTriggers">
+            <arg name="actionId" type="as" direction="in"/>
+            <arg name="triggerType" type="s" direction="in"/>
+            <arg name="triggerParamStrings" type="as" direction="in"/>
+        </method>
     </interface>
 </node>
