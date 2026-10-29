@@ -183,7 +183,7 @@ void Component::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, Shortcut
         {QStringLiteral("x11Timestamp"), timestamp},
     };
     if (!activationToken.isEmpty()) {
-        options.insert(QStringLiteral("XDG_ACTIVATION_TOKEN"), activationToken);
+        options.insert(QStringLiteral("xdgActivationToken"), activationToken);
     }
 
     switch (state) {
