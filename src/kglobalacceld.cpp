@@ -193,6 +193,11 @@ bool KGlobalAccelD::init()
     return true;
 }
 
+void KGlobalAccelD::setActivationTokenCreator(std::function<QString(const QString &)> creator)
+{
+    d->m_registry->m_activationTokenCreator = std::move(creator);
+}
+
 bool KGlobalAccelD::keyEvent(int keyQt, ShortcutKeyState state)
 {
     return d->m_registry->keyEvent(keyQt, state);

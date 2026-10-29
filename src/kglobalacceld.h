@@ -20,6 +20,8 @@
 #include <QList>
 #include <QStringList>
 
+#include <functional>
+
 struct KGlobalAccelDPrivate;
 
 /**
@@ -48,6 +50,11 @@ public:
     ~KGlobalAccelD() override;
 
     bool init();
+
+    /**
+     * Provide a @p creator function to generate a token for a given @p componentId
+     */
+    void setActivationTokenCreator(std::function<QString(const QString &componentId)> creator);
 
     bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);
