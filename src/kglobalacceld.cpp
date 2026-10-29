@@ -193,7 +193,7 @@ bool KGlobalAccelD::init()
     return true;
 }
 
-void KGlobalAccelD::setActivationTokenCreator(std::function<QString(const QString &)> creator)
+void KGlobalAccelD::setActivationTokenCreator(std::function<QString(const QString &, ActivationTokenUsage)> creator)
 {
     d->m_registry->m_activationTokenCreator = std::move(creator);
 }

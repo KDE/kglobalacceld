@@ -10,6 +10,7 @@
 #define GLOBALSHORTCUTSREGISTRY_H
 
 #include "kglobalaccel.h"
+#include "kglobalacceld.h"
 
 #include "component.h"
 #include "kserviceactioncomponent.h"
@@ -237,7 +238,7 @@ private:
      */
     bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
-    std::function<QString(const QString &)> m_activationTokenCreator;
+    std::function<QString(const QString &, KGlobalAccelD::ActivationTokenUsage)> m_activationTokenCreator;
     GlobalShortcut *m_lastShortcut = nullptr;
     QTimer m_refreshServicesTimer;
     uint64_t m_serial = 0;
