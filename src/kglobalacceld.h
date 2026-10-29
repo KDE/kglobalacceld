@@ -20,6 +20,8 @@
 #include <QList>
 #include <QStringList>
 
+#include <functional>
+
 struct KGlobalAccelDPrivate;
 
 /**
@@ -48,6 +50,14 @@ public:
     ~KGlobalAccelD() override;
 
     bool init();
+
+    /**
+     * Sets the compositor callback used to create an XDG activation token for a
+     * matched, allowed shortcut press. The argument identifies the component.
+     * An empty callback disables token creation. Repeats and releases do not
+     * request tokens.
+     */
+    void setActivationTokenCreator(std::function<QString(const QString &)> creator);
 
     bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);

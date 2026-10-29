@@ -170,7 +170,7 @@ public Q_SLOTS:
     //! Returns the shortcut contexts available for the component.
     Q_SCRIPTABLE QStringList getShortcutContexts() const;
 
-    virtual void emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state);
+    virtual void emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state, const QString &activationToken = {});
 
     Q_SCRIPTABLE void invokeShortcut(const QString &shortcutName, const QString &context = QStringLiteral("default"));
 
