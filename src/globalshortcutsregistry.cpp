@@ -527,13 +527,8 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
         return false;
     }
 
-    QString activationToken;
-    if (state == ShortcutKeyState::Pressed && m_activationTokenCreator) {
-        activationToken = m_activationTokenCreator(shortcut->context()->component()->uniqueName());
-    }
-
     // Invoke the action
-    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state, activationToken);
+    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
     m_lastShortcut = shortcut;
 
     return true;

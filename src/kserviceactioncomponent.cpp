@@ -47,7 +47,7 @@ KServiceActionComponent::KServiceActionComponent(KService::Ptr service, GlobalSh
 
 KServiceActionComponent::~KServiceActionComponent() = default;
 
-void KServiceActionComponent::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state, const QString &activationToken)
+void KServiceActionComponent::emitGlobalShortcutEvent(const GlobalShortcut &shortcut, ShortcutKeyState state)
 {
     if (state != ShortcutKeyState::Pressed) {
         return;
@@ -75,7 +75,6 @@ void KServiceActionComponent::emitGlobalShortcutEvent(const GlobalShortcut &shor
     // to avoid that add our own UntrustedProgramHandler that accepts the launch regardless
     new UntrustedProgramHandler(delegate);
     job->setUiDelegate(delegate);
-    job->setStartupId(activationToken.toUtf8());
     job->start();
 }
 

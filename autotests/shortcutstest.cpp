@@ -7,7 +7,6 @@
 #include <QTest>
 
 #include "component.h"
-#include "globalshortcutsregistry.h"
 #include "kglobalacceld.h"
 
 #include <QFile>
@@ -24,7 +23,6 @@ private Q_SLOTS:
     void testShortcuts_data();
     void testShortcuts();
     void testSerialization();
-    void testActivationToken();
     void testContestedKeys();
     void testBacktab_data();
     void testBacktab();
@@ -108,53 +106,6 @@ void ShortcutsTest::initTestCase()
     QVERIFY(m_globalacceld->init());
     m_globalaccel = KGlobalAccel::self();
     QVERIFY(m_globalaccel);
-}
-
-void ShortcutsTest::testActivationToken()
-{
-    GlobalShortcutsRegistry registry;
-    auto *component = registry.getOrCreateComponent(QStringLiteral("token-test"), QStringLiteral("Token Test"));
-    auto *shortcut = component->registerShortcut(QStringLiteral("action"), QStringLiteral("Action"), QStringLiteral("F12"), QStringLiteral("F12"), 0);
-    shortcut->setIsPresent(true);
-    QSignalSpy pressed(component, &Component::pressed);
-    QSignalSpy repeated(component, &Component::repeated);
-    QSignalSpy released(component, &Component::released);
-    QSignalSpy legacyPressed(component, &Component::globalShortcutPressed);
-
-    const QString token = QStringLiteral("test-activation-token");
-    int tokenRequests = 0;
-    registry.m_activationTokenCreator = [&](const QString &componentId) {
-        ++tokenRequests;
-        return componentId == QStringLiteral("token-test") ? token : QString();
-    };
-    QVERIFY(!registry.keyEvent(Qt::Key_F11, ShortcutKeyState::Pressed));
-    QCOMPARE(tokenRequests, 0);
-    QVERIFY(registry.keyEvent(Qt::Key_F12, ShortcutKeyState::Pressed));
-    QCOMPARE(tokenRequests, 1);
-    QCOMPARE(pressed.count(), 1);
-    QCOMPARE(pressed.at(0).at(0).toString(), QStringLiteral("action"));
-    const auto options = pressed.at(0).at(1).toMap();
-    QCOMPARE(options.value(QStringLiteral("xdgActivationToken")).toString(), token);
-    QCOMPARE(options.value(QStringLiteral("x11Timestamp")).toLongLong(), 0);
-    QCOMPARE(legacyPressed.count(), 1);
-
-    QVERIFY(registry.keyEvent(Qt::Key_F12, ShortcutKeyState::Repeated));
-    registry.keyEvent(Qt::Key_F12, ShortcutKeyState::Released);
-    QCOMPARE(tokenRequests, 1);
-    QCOMPARE(repeated.count(), 1);
-    QCOMPARE(released.count(), 1);
-    QVERIFY(!repeated.at(0).at(1).toMap().contains(QStringLiteral("xdgActivationToken")));
-    QVERIFY(!released.at(0).at(1).toMap().contains(QStringLiteral("xdgActivationToken")));
-
-    registry.m_useAllowList = true;
-    QVERIFY(!registry.keyEvent(Qt::Key_F12, ShortcutKeyState::Pressed));
-    QCOMPARE(tokenRequests, 1);
-    QCOMPARE(pressed.count(), 1);
-    registry.m_useAllowList = false;
-    registry.m_activationTokenCreator = {};
-    QVERIFY(registry.keyEvent(Qt::Key_F12, ShortcutKeyState::Pressed));
-    QCOMPARE(pressed.count(), 2);
-    QVERIFY(!pressed.at(1).at(1).toMap().contains(QStringLiteral("xdgActivationToken")));
 }
 
 typedef std::pair<QEvent::Type, int> Event;

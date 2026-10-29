@@ -23,7 +23,6 @@
 #include <QTimer>
 
 #include <chrono>
-#include <functional>
 
 #include "kglobalaccel_export.h"
 #include "shortcutkeystate.h"
@@ -140,7 +139,6 @@ private:
     friend struct KGlobalAccelDPrivate;
     friend class Component;
     friend class KGlobalAccelD;
-    friend class ShortcutsTest;
 
     Component *createComponent(const QString &uniqueName, const QString &friendlyName);
     KServiceActionComponent *createServiceActionComponent(const QString &uniqueName);
@@ -238,7 +236,6 @@ private:
      */
     bool isShortcutAllowed(const GlobalShortcut *shortcut) const;
 
-    std::function<QString(const QString &)> m_activationTokenCreator;
     GlobalShortcut *m_lastShortcut = nullptr;
     QTimer m_refreshServicesTimer;
     uint64_t m_serial = 0;
