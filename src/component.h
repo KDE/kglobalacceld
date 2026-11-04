@@ -61,6 +61,9 @@ public:
     //! Return uniqueName converted to a valid dbus path
     QDBusObjectPath dbusPath() const;
 
+    //! Convert a component name to a D-Bus path segment.
+    static QString sanitizeDBusPathSegment(QString name);
+
     //! Deactivate all currently active shortcuts
     void deactivateShortcuts(bool temporarily = false);
 
