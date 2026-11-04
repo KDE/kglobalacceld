@@ -141,22 +141,24 @@ GlobalShortcutContext *Component::currentContext()
 
 QDBusObjectPath Component::dbusPath() const
 {
+    // QDBusObjectPath could be a little bit easier to handle :-)
+    return QDBusObjectPath(QLatin1String("/component/") + sanitizeDBusPathSegment(_uniqueName));
+}
+
+QString Component::sanitizeDBusPathSegment(QString name)
+{
     auto isNonAscii = [](QChar ch) {
-        const char c = ch.unicode();
+        const char16_t c = ch.unicode();
         const bool isAscii = c == '_' //
             || (c >= 'A' && c <= 'Z') //
             || (c >= 'a' && c <= 'z') //
             || (c >= '0' && c <= '9');
         return !isAscii;
     };
-
-    QString dbusPath = _uniqueName;
     // DBus path can only contain ASCII characters, any non-alphanumeric char should
     // be turned into '_'
-    std::replace_if(dbusPath.begin(), dbusPath.end(), isNonAscii, QLatin1Char('_'));
-
-    // QDBusObjectPath could be a little bit easier to handle :-)
-    return QDBusObjectPath(QLatin1String("/component/") + dbusPath);
+    std::replace_if(name.begin(), name.end(), isNonAscii, QLatin1Char('_'));
+    return name;
 }
 
 void Component::deactivateShortcuts(bool temporarily)
