@@ -63,6 +63,8 @@ struct KGlobalAccelDPrivate {
 
     GlobalShortcut *addAction(const QStringList &actionId);
 
+    void scheduleWriteSettings();
+
     void splitComponent(QString &component, QString &context) const
     {
         context = QStringLiteral("default");
@@ -173,7 +175,9 @@ bool KGlobalAccelD::init()
     qDBusRegisterMetaType<QList<KGlobalShortcutInfo>>();
     qDBusRegisterMetaType<KGlobalAccel::MatchType>();
 
-    connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, &KGlobalAccelD::scheduleWriteSettings);
+    connect(d->m_registry.get(), &GlobalShortcutsRegistry::needsSave, this, [this] {
+        d->scheduleWriteSettings();
+    });
 
     d->writeoutTimer.setSingleShot(true);
     connect(&d->writeoutTimer, &QTimer::timeout, d->m_registry.get(), &GlobalShortcutsRegistry::writeSettings);
@@ -379,12 +383,12 @@ void KGlobalAccelD::doRegister(const QStringList &actionId)
         // a switch of locales is one common reason for a changing friendlyName
         if ((!actionId[KGlobalAccel::ActionFriendly].isEmpty()) && shortcut->friendlyName() != actionId[KGlobalAccel::ActionFriendly]) {
             shortcut->setFriendlyName(actionId[KGlobalAccel::ActionFriendly]);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
         if ((!actionId[KGlobalAccel::ComponentFriendly].isEmpty())
             && shortcut->context()->component()->friendlyName() != actionId[KGlobalAccel::ComponentFriendly]) {
             shortcut->context()->component()->setFriendlyName(actionId[KGlobalAccel::ComponentFriendly]);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
     }
 }
@@ -458,7 +462,7 @@ bool KGlobalAccelD::unregister(const QString &componentUnique, const QString &sh
     GlobalShortcut *shortcut = d->findAction(componentUnique, shortcutUnique);
     if (shortcut) {
         shortcut->unRegister();
-        scheduleWriteSettings();
+        d->scheduleWriteSettings();
     }
 
     return shortcut;
@@ -473,7 +477,7 @@ void KGlobalAccelD::unRegister(const QStringList &actionId)
     GlobalShortcut *shortcut = d->findAction(actionId);
     if (shortcut) {
         shortcut->unRegister();
-        scheduleWriteSettings();
+        d->scheduleWriteSettings();
     }
 }
 #endif
@@ -515,7 +519,7 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     if (isDefault) {
         if (shortcut->defaultKeys() != normalizedKeys) {
             shortcut->setDefaultKeys(normalizedKeys);
-            scheduleWriteSettings();
+            d->scheduleWriteSettings();
         }
         return normalizedKeys; // doesn't matter
     }
@@ -543,7 +547,7 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     //  which can never be fresh if created the usual way
     shortcut->setIsFresh(false);
 
-    scheduleWriteSettings();
+    d->scheduleWriteSettings();
 
     return shortcut->keys();
 }
@@ -603,14 +607,14 @@ bool KGlobalAccelD::setInverseShortcutActions(const QString &componentUnique,
 
     forwardShortcut->setInverseActionUniqueName(backwardActionUnique);
     backwardShortcut->setInverseActionUniqueName(forwardActionUnique);
-    scheduleWriteSettings();
+    d->scheduleWriteSettings();
     return true;
 }
 
-void KGlobalAccelD::scheduleWriteSettings() const
+void KGlobalAccelDPrivate::scheduleWriteSettings()
 {
-    if (!d->writeoutTimer.isActive()) {
-        d->writeoutTimer.start(500);
+    if (!writeoutTimer.isActive()) {
+        writeoutTimer.start(500);
     }
 }
 

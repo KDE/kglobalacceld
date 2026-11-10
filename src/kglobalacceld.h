@@ -212,8 +212,6 @@ Q_SIGNALS:
     Q_SCRIPTABLE void yourShortcutsChanged(const QStringList &actionId, const QSet<QKeySequence> &newKeys);
 
 private:
-    void scheduleWriteSettings() const;
-
     KGlobalAccelDPrivate *const d;
 };
 
