@@ -355,10 +355,10 @@ GlobalShortcut *GlobalShortcutsRegistry::activeShortcutByKey(const QKeySequence 
     return shortcuts[0];
 }
 
-bool GlobalShortcutsRegistry::isShortcutAvailable(const QKeySequence &shortcut, const QString &componentName, const QString &contextName) const
+bool GlobalShortcutsRegistry::isShortcutKeyAvailable(const QKeySequence &shortcut, const QString &componentName, const QString &contextName) const
 {
     return std::all_of(m_components.cbegin(), m_components.cend(), [&shortcut, &componentName, &contextName](const ComponentPtr &component) {
-        return component->isShortcutAvailable(shortcut, componentName, contextName);
+        return component->isShortcutKeyAvailable(shortcut, componentName, contextName);
     });
 }
 

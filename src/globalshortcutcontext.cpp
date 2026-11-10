@@ -109,7 +109,7 @@ QString GlobalShortcutContext::uniqueName() const
     return _uniqueName;
 }
 
-bool GlobalShortcutContext::isShortcutAvailable(const QKeySequence &key) const
+bool GlobalShortcutContext::isShortcutKeyAvailable(const QKeySequence &key) const
 {
     for (auto it = _actionsMap.cbegin(), endIt = _actionsMap.cend(); it != endIt; ++it) {
         const GlobalShortcut *sc = it.value();

@@ -252,18 +252,18 @@ bool Component::isActive() const
     return false;
 }
 
-bool Component::isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const
+bool Component::isShortcutKeyAvailable(const QKeySequence &key, const QString &component, const QString &context) const
 {
     qCDebug(KGLOBALACCELD) << key.toString() << component;
 
     // if this component asks for the key. only check the keys in the same
     // context
     if (component == uniqueName()) {
-        return shortcutContext(context)->isShortcutAvailable(key);
+        return shortcutContext(context)->isShortcutKeyAvailable(key);
     } else {
         for (auto it = _contexts.cbegin(), endIt = _contexts.cend(); it != endIt; ++it) {
             const GlobalShortcutContext *ctx = it.value();
-            if (!ctx->isShortcutAvailable(key)) {
+            if (!ctx->isShortcutKeyAvailable(key)) {
                 return false;
             }
         }
@@ -273,8 +273,8 @@ bool Component::isShortcutAvailable(const QKeySequence &key, const QString &comp
 
 GlobalShortcut *Component::registerShortcut(const QString &uniqueName,
                                             const QString &friendlyName,
-                                            const QString &shortcutString,
-                                            const QString &defaultShortcutString,
+                                            const QString &shortcutKeysString,
+                                            const QString &defaultShortcutKeysString,
                                             uint64_t serial)
 {
     if (!serial) {
@@ -283,8 +283,8 @@ GlobalShortcut *Component::registerShortcut(const QString &uniqueName,
     }
 
     GlobalShortcut *shortcut = new GlobalShortcut(uniqueName, friendlyName, serial, currentContext(), _registry);
-    shortcut->setKeys(keysFromString(shortcutString));
-    shortcut->setDefaultKeys(keysFromString(defaultShortcutString));
+    shortcut->setKeys(keysFromString(shortcutKeysString));
+    shortcut->setDefaultKeys(keysFromString(defaultShortcutKeysString));
     shortcut->setIsFresh(false);
     return shortcut;
 }
