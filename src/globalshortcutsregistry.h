@@ -111,7 +111,7 @@ public:
      * It is available if not used by another component in any context or used
      * by @p component only in not active contexts.
      */
-    bool isShortcutAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
+    bool isShortcutKeyAvailable(const QKeySequence &shortcut, const QString &component, const QString &context) const;
 
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
 

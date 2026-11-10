@@ -84,7 +84,7 @@ public:
     /**
      * Check if @a key is available for component @p component
      */
-    bool isShortcutAvailable(const QKeySequence &key, const QString &component, const QString &context) const;
+    bool isShortcutKeyAvailable(const QKeySequence &key, const QString &component, const QString &context) const;
 
     //! Load the settings from config group @p config
     virtual void loadSettings(const KConfigGroup &config, const KConfigGroup &state);
@@ -114,15 +114,15 @@ protected:
      * Create a new globalShortcut by its name
      * @param uniqueName internal unique name to identify the shortcut
      * @param friendlyName name for the shortcut to be presented to the user
-     * @param shortcutString string representation of the shortcut, such as "CTRL+S"
-     * @param defaultShortcutString string representation of the default shortcut,
+     * @param shortcutKeysString string representation of the shortcut, such as "CTRL+S"
+     * @param defaultShortcutKeysString string representation of the default shortcut,
      *                   such as "CTRL+S", when the user choses to reset to default
      *                   the keyboard shortcut will return to this one.
      */
     GlobalShortcut *registerShortcut(const QString &uniqueName,
                                      const QString &friendlyName,
-                                     const QString &shortcutString,
-                                     const QString &defaultShortcutString,
+                                     const QString &shortcutKeysString,
+                                     const QString &defaultShortcutKeysString,
                                      uint64_t serial = 0);
 
     /**
