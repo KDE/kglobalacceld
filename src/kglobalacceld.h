@@ -20,6 +20,8 @@
 #include <QList>
 #include <QStringList>
 
+#include <functional>
+
 struct KGlobalAccelDPrivate;
 
 /**
@@ -48,6 +50,19 @@ public:
     ~KGlobalAccelD() override;
 
     bool init();
+
+    /**
+     * What an activation token is going to be used for
+     */
+    enum class ActivationTokenUsage {
+        Action, ///< Passed to an already running application, which may use it to activate one of its windows
+        Launch, ///< Used to launch the application from its desktop file
+    };
+
+    /**
+     * Provide a @p creator function to generate a token for a given @p componentId
+     */
+    void setActivationTokenCreator(std::function<QString(const QString &componentId, ActivationTokenUsage usage)> creator);
 
     bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);

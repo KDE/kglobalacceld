@@ -527,8 +527,16 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
         return false;
     }
 
+    QString activationToken;
+    if (state == ShortcutKeyState::Pressed && m_activationTokenCreator) {
+        Component *component = shortcut->context()->component();
+        const auto usage =
+            qobject_cast<KServiceActionComponent *>(component) ? KGlobalAccelD::ActivationTokenUsage::Launch : KGlobalAccelD::ActivationTokenUsage::Action;
+        activationToken = m_activationTokenCreator(component->uniqueName(), usage);
+    }
+
     // Invoke the action
-    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state);
+    shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state, activationToken);
     m_lastShortcut = shortcut;
 
     return true;
