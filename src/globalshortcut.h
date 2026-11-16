@@ -90,6 +90,9 @@ public:
     //! The serial indicates the time when the shortcut has been registered.
     uint64_t serial() const;
 
+    //! D-Bus clients whose application owns the shortcut and is running
+    QSet<QString> clients;
+
 private:
     //! means the associated application is present.
     bool _isPresent : 1;

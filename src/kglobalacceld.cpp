@@ -19,6 +19,7 @@
 #include "sequencehelpers_p.h"
 
 #include <QDBusConnection>
+#include <QDBusMessage>
 #include <QDBusMetaType>
 #include <QMetaMethod>
 #include <QTimer>
@@ -445,7 +446,13 @@ void KGlobalAccelD::setInactive(const QStringList &actionId)
     qCDebug(KGLOBALACCELD) << actionId;
 
     GlobalShortcut *shortcut = d->findAction(actionId);
-    if (shortcut) {
+    if (!shortcut) {
+        return;
+    }
+
+    // Another instance of the component may still be running
+    shortcut->clients.remove(message().service());
+    if (shortcut->clients.isEmpty()) {
         shortcut->setIsPresent(false);
     }
 }
@@ -518,6 +525,10 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
             scheduleWriteSettings();
         }
         return normalizedKeys; // doesn't matter
+    }
+
+    if (setPresent) {
+        shortcut->clients.insert(message().service());
     }
 
     if (isAutoloading && !shortcut->isFresh()) {
