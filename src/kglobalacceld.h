@@ -41,6 +41,8 @@ public:
         SetPresent = 2,
         NoAutoloading = 4,
         IsDefault = 8,
+        Momentary = 16,
+        AllowRegularKeyEvent = 32,
     };
     Q_ENUM(SetShortcutFlag)
     Q_DECLARE_FLAGS(SetShortcutFlags, SetShortcutFlag)

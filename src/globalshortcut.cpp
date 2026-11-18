@@ -77,6 +77,16 @@ bool GlobalShortcut::isSessionShortcut() const
     return uniqueName().startsWith(QLatin1String("_k_session:"));
 }
 
+bool GlobalShortcut::isMomentary() const
+{
+    return _isMomentary;
+}
+
+bool GlobalShortcut::consumesKeyEvent() const
+{
+    return _consumesKeyEvents;
+}
+
 void GlobalShortcut::setIsFresh(bool value)
 {
     _isFresh = value;
@@ -206,6 +216,16 @@ void GlobalShortcut::setInactive()
     }
 
     _isRegistered = false;
+}
+
+void GlobalShortcut::setMomentary(bool momentary)
+{
+    _isMomentary = momentary;
+}
+
+void GlobalShortcut::setConsumesKeyEvent(bool consumesKeyEvent)
+{
+    _consumesKeyEvents = consumesKeyEvent;
 }
 
 uint64_t GlobalShortcut::serial() const

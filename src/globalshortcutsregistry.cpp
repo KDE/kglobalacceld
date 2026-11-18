@@ -534,7 +534,7 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
     shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, state, activationToken);
     m_lastShortcut = shortcut;
 
-    return true;
+    return shortcut->consumesKeyEvent();
 }
 
 bool GlobalShortcutsRegistry::pointerPressed(Qt::MouseButtons pointerButtons)

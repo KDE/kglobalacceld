@@ -16,6 +16,10 @@
 #include <KIO/UntrustedProgramHandlerInterface>
 #include <KNotificationJobUiDelegate>
 
+using namespace Qt::StringLiterals;
+
+static constexpr QLatin1StringView ConsumesKeyEventConfigKey = "ConsumesKeyEvent"_L1;
+
 class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
 {
 public:
@@ -110,6 +114,8 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
             contextStateGroup = KConfigGroup(&state, context->uniqueName());
         }
 
+        KConfigGroup actionInfoGroup(&contextGroup, "$ActionInfo"_L1);
+
         for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
             // We do not write fresh shortcuts.
             // We do not write session shortcuts
@@ -121,6 +127,14 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
                 contextGroup.writeEntry(shortcut->uniqueName(), stringFromKeys(shortcut->keys()));
             } else {
                 contextGroup.revertToDefault(shortcut->uniqueName());
+            }
+
+            KConfigGroup currentActionInfoGroup(&actionInfoGroup, shortcut->uniqueName());
+
+            if (!shortcut->consumesKeyEvent()) {
+                currentActionInfoGroup.writeEntry(ConsumesKeyEventConfigKey, false);
+            } else {
+                currentActionInfoGroup.revertToDefault(ConsumesKeyEventConfigKey);
             }
 
             contextStateGroup.writeEntry(shortcut->uniqueName(), shortcut->serial());
@@ -138,6 +152,11 @@ void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup, cons
         const quint64 serial = stateGroup.readEntry<uint64_t>(action.name(), 0);
 
         GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString, serial);
+
+        const KConfigGroup actionInfoGroup(&configGroup, "$ActionInfo"_L1);
+        const KConfigGroup currentActionInfoGroup(&actionInfoGroup, action.name());
+
+        shortcut->setConsumesKeyEvent(currentActionInfoGroup.readEntry(ConsumesKeyEventConfigKey, true));
         shortcut->setIsPresent(true);
     }
 

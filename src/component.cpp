@@ -16,6 +16,9 @@
 
 using namespace Qt::StringLiterals;
 
+static constexpr QLatin1StringView MomentaryConfigKey = "Momentary"_L1;
+static constexpr QLatin1StringView ConsumesKeyEventConfigKey = "ConsumesKeyEvent"_L1;
+
 QSet<QKeySequence> Component::keysFromString(const QString &str)
 {
     QSet<QKeySequence> ret;
@@ -328,7 +331,22 @@ void Component::loadSettings(const KConfigGroup &configGroup, const KConfigGroup
         registerShortcut(confKey, entry[2], entry[0], entry[1], serial);
     }
 
+    // We can't just keep adding positional fields to the single shortcut line.
+    // The following is for shortcut info beyond the bare necessities.
+
+    const KConfigGroup actionInfoGroup(&configGroup, "$ActionInfo"_L1);
     const KConfigGroup inverseActionGroup(&configGroup, "$InverseAction"_L1);
+
+    const auto actionInfoGroups = actionInfoGroup.groupList();
+    for (const QString &actionUnique : actionInfoGroups) {
+        GlobalShortcut *shortcut = _current->_actionsMap.value(actionUnique, nullptr);
+        if (!shortcut) {
+            continue;
+        }
+        const KConfigGroup currentActionInfoGroup(&actionInfoGroup, actionUnique);
+        shortcut->setMomentary(currentActionInfoGroup.readEntry(MomentaryConfigKey, false));
+        shortcut->setConsumesKeyEvent(currentActionInfoGroup.readEntry(ConsumesKeyEventConfigKey, true));
+    }
 
     const auto inverseActionKeys = inverseActionGroup.keyList();
     for (const QString &confKey : inverseActionKeys) {
@@ -393,6 +411,7 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
             contextGroup.writeEntry("_k_friendly_name", context->friendlyName());
         }
 
+        KConfigGroup actionInfoGroup(&contextGroup, "$ActionInfo"_L1);
         KConfigGroup inverseActionGroup(&contextGroup, "$InverseAction"_L1);
 
         // qCDebug(KGLOBALACCELD) << "writing group " << _uniqueName << ":" << context->uniqueName();
@@ -413,6 +432,15 @@ void Component::writeSettings(KConfigGroup &configGroup, KConfigGroup &stateGrou
 
             contextGroup.writeEntry(shortcut->uniqueName(), entry);
             stateGroup.writeEntry(shortcut->uniqueName(), shortcut->serial());
+
+            KConfigGroup currentActionInfoGroup(&actionInfoGroup, shortcut->uniqueName());
+
+            if (shortcut->isMomentary()) {
+                currentActionInfoGroup.writeEntry(MomentaryConfigKey, true);
+            }
+            if (!shortcut->consumesKeyEvent()) {
+                currentActionInfoGroup.writeEntry(ConsumesKeyEventConfigKey, false);
+            }
 
             if (!shortcut->inverseActionUniqueName().isEmpty() && !inverseActionGroup.hasKey(shortcut->inverseActionUniqueName())) {
                 inverseActionGroup.writeEntry(shortcut->uniqueName(), QStringList{shortcut->inverseActionUniqueName()});

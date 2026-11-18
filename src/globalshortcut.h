@@ -55,6 +55,12 @@ public:
     //! Returns true if the shortcut is a session shortcut
     bool isSessionShortcut() const;
 
+    //! Returns true if the key event should be consumed, false if passed through
+    bool isMomentary() const;
+
+    //! Returns true if the key event should be consumed, false if passed through
+    bool consumesKeyEvent() const;
+
     //! Returns a list of keys associated with this shortcut.
     QSet<QKeySequence> keys() const;
 
@@ -90,6 +96,12 @@ public:
     //! The serial indicates the time when the shortcut has been registered.
     uint64_t serial() const;
 
+    //! Marks the shortcut as momentary. Its effect will be active from press to release event.
+    void setMomentary(bool);
+
+    //! Sets whether the key event should be consumed. Default is false (pass through to subsequent key handlers)
+    void setConsumesKeyEvent(bool);
+
 private:
     //! means the associated application is present.
     bool _isPresent : 1;
@@ -99,6 +111,10 @@ private:
 
     //! means the shortcut is new
     bool _isFresh : 1;
+
+    bool _isMomentary : 1 = false;
+
+    bool _consumesKeyEvents : 1 = true;
 
     GlobalShortcutsRegistry *_registry = nullptr;
 
