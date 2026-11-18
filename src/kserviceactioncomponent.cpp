@@ -16,6 +16,10 @@
 #include <KIO/UntrustedProgramHandlerInterface>
 #include <KNotificationJobUiDelegate>
 
+using namespace Qt::StringLiterals;
+
+static constexpr QLatin1StringView PassThroughKeyEventConfigKey = "PassThroughKeyEvent"_L1;
+
 class UntrustedProgramHandler : public KIO::UntrustedProgramHandlerInterface
 {
 public:
@@ -110,6 +114,8 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
             contextStateGroup = KConfigGroup(&state, context->uniqueName());
         }
 
+        KConfigGroup keysExtraInfoGroup(&contextGroup, "$Keys"_L1);
+
         for (const GlobalShortcut *shortcut : std::as_const(context->_actionsMap)) {
             // We do not write fresh shortcuts.
             // We do not write session shortcuts
@@ -121,6 +127,14 @@ void KServiceActionComponent::writeSettings(KConfigGroup &config, KConfigGroup &
                 contextGroup.writeEntry(shortcut->uniqueName(), stringFromKeys(shortcut->keys()));
             } else {
                 contextGroup.revertToDefault(shortcut->uniqueName());
+            }
+
+            KConfigGroup currentKeysExtraInfoGroup(&keysExtraInfoGroup, shortcut->uniqueName());
+
+            if (currentKeysExtraInfoGroup.readEntry(PassThroughKeyEventConfigKey, false) == shortcut->shouldPassThroughKeyEvent()) {
+                currentKeysExtraInfoGroup.revertToDefault(PassThroughKeyEventConfigKey);
+            } else {
+                currentKeysExtraInfoGroup.writeEntry(PassThroughKeyEventConfigKey, shortcut->shouldPassThroughKeyEvent());
             }
 
             contextStateGroup.writeEntry(shortcut->uniqueName(), shortcut->serial());
@@ -138,6 +152,11 @@ void KServiceActionComponent::loadSettings(const KConfigGroup &configGroup, cons
         const quint64 serial = stateGroup.readEntry<uint64_t>(action.name(), 0);
 
         GlobalShortcut *shortcut = registerShortcut(action.name(), action.text(), shortcutString, defaultShortcutString, serial);
+
+        const KConfigGroup keysExtraInfoGroup(&configGroup, "$Keys"_L1);
+        const KConfigGroup currentKeysExtraInfoGroup(&keysExtraInfoGroup, action.name());
+
+        shortcut->setPassThroughKeyEvent(currentKeysExtraInfoGroup.readEntry(PassThroughKeyEventConfigKey, false));
         shortcut->setIsPresent(true);
     }
 

@@ -514,6 +514,8 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
     const bool setPresent = (flags & SetPresent);
     const bool isAutoloading = !(flags & NoAutoloading);
     const bool isDefault = (flags & IsDefault);
+    const bool isMomentary = (flags & Momentary);
+    const bool overwritePassThroughKeyEvent = (flags & SetPassThroughKeyEvent) || (flags & NoPassThroughKeyEvent);
 
     GlobalShortcut *shortcut = d->findAction(actionId);
     if (!shortcut) {
@@ -524,8 +526,9 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
 
     // default shortcuts cannot clash because they don't do anything
     if (isDefault) {
-        if (shortcut->defaultKeys() != normalizedKeys) {
+        if (shortcut->defaultKeys() != normalizedKeys || shortcut->isMomentary() != isMomentary) {
             shortcut->setDefaultKeys(normalizedKeys);
+            shortcut->setMomentary(isMomentary);
             d->scheduleWriteSettings();
         }
         return normalizedKeys; // doesn't matter
@@ -547,7 +550,11 @@ QSet<QKeySequence> KGlobalAccelD::setShortcutKeys(const QStringList &actionId, c
 
     // now we are actually changing the shortcut of the action
     shortcut->setKeys(normalizedKeys);
+    shortcut->setMomentary(isMomentary);
 
+    if (overwritePassThroughKeyEvent) {
+        shortcut->setPassThroughKeyEvent(!(flags & NoPassThroughKeyEvent));
+    }
     if (setPresent) {
         shortcut->setIsPresent(true);
     }

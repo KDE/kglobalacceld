@@ -55,6 +55,12 @@ public:
     //! Returns true if the shortcut is a session shortcut
     bool isSessionShortcut() const;
 
+    //! Returns true if the shortcut's effect will be active only from press to release event.
+    bool isMomentary() const;
+
+    //! Returns true if the key event should be passed through, false if consumed
+    bool shouldPassThroughKeyEvent() const;
+
     //! Returns a list of keys associated with this shortcut.
     QSet<QKeySequence> keys() const;
 
@@ -79,6 +85,12 @@ public:
     //! Sets the keys activated with this shortcut. The old keys are freed.
     void setKeys(const QSet<QKeySequence> &);
 
+    //! Marks the shortcut as momentary. Its effect will be active only from press to release event.
+    void setMomentary(bool);
+
+    //! Sets whether the key event should be passed through to subsequent key handlers. Default is false (i.e. key event is consumed).
+    void setPassThroughKeyEvent(bool);
+
     //! Returns the unique name aka id for the shortcuts.
     QString uniqueName() const;
 
@@ -102,6 +114,10 @@ private:
 
     //! means the shortcut is new
     bool _isFresh : 1;
+
+    bool _isMomentary : 1 = false;
+
+    bool _shouldPassThroughKeyEvent : 1 = false;
 
     GlobalShortcutsRegistry *_registry = nullptr;
 

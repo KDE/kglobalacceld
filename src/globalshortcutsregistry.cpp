@@ -315,8 +315,7 @@ Component *GlobalShortcutsRegistry::getOrCreateComponent(const QString &uniqueNa
             return nullptr;
         }
         actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
-        actionComp->loadSettings(_config.group(QStringLiteral("services")).group(uniqueName),
-                                 _state.group(QStringLiteral("services")).group(uniqueName));
+        actionComp->loadSettings(_config.group(QStringLiteral("services")).group(uniqueName), _state.group(QStringLiteral("services")).group(uniqueName));
         return actionComp;
     } else {
         return createComponent(uniqueName, friendlyName);
@@ -571,7 +570,8 @@ bool GlobalShortcutsRegistry::processKey(int keyQt, ShortcutKeyState state)
         m_heldShortcuts.insert(heldKey, shortcut);
     }
 
-    return true;
+    bool consumesKeyEvent = !shortcut->shouldPassThroughKeyEvent();
+    return consumesKeyEvent;
 }
 
 bool GlobalShortcutsRegistry::pointerPressed(Qt::MouseButtons pointerButtons)
