@@ -7,12 +7,10 @@
 #include "globalshortcutcontext.h"
 
 #include "globalshortcut.h"
-
-#include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "sequencehelpers_p.h"
 
 GlobalShortcutContext::GlobalShortcutContext(const QString &uniqueName, const QString &friendlyName, Component *component)
-
     : _uniqueName(uniqueName)
     , _friendlyName(friendlyName)
     , _component(component)
@@ -90,6 +88,25 @@ QList<GlobalShortcut *> GlobalShortcutContext::getShortcutsByKey(const QKeySeque
                     ret.append(sc);
                 }
                 break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+QList<GlobalShortcut *> GlobalShortcutContext::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    if (trigger.isEmpty()) {
+        return {};
+    }
+
+    QList<GlobalShortcut *> ret;
+    for (GlobalShortcut *sc : std::as_const(_actionsMap)) {
+        const auto triggers = sc->triggers(trigger.type());
+        for (const KGlobalShortcutTrigger &other : triggers) {
+            if (other == trigger) {
+                ret.append(sc);
             }
         }
     }

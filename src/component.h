@@ -23,6 +23,7 @@
 class GlobalShortcut;
 class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
+class KGlobalShortcutTrigger;
 class ShortcutsTest;
 
 /**
@@ -74,11 +75,11 @@ public:
     GlobalShortcutContext *shortcutContext(const QString &name);
     GlobalShortcutContext const *shortcutContext(const QString &name) const;
 
-    /**
-     * Returns the list of shortcuts (different context) registered with @p
-     * key.
-     */
+    //! Returns the list of shortcuts (different context) registered with \a key.
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+
+    //! Returns the list of shortcuts (different context) registered with \a trigger. Equal match only.
+    QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     //! Returns the shortcut by unique name. Only the active context is
     //! searched.

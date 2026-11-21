@@ -16,6 +16,7 @@
 
 class Component;
 class GlobalShortcut;
+class KGlobalShortcutTrigger;
 
 /**
  * @author Michael Jansen <kde@michael-jansen.biz>
@@ -48,9 +49,12 @@ public:
     Component *component();
     Component const *component() const;
 
-    //! Get shortcut for @p key or nullptr
+    //! Get shortcut for \a key or nullptr
     GlobalShortcut *getShortcutByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &key, KGlobalAccel::MatchType type) const;
+
+    //! Get shortcuts for \a trigger
+    QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     //! Remove @p shortcut from the context. The shortcut is not deleted.
     GlobalShortcut *takeShortcut(GlobalShortcut *shortcut);

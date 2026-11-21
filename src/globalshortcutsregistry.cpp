@@ -12,6 +12,7 @@
 #include "globalshortcut.h"
 #include "globalshortcutcontext.h"
 #include "kglobalshortcutinfo_p.h"
+#include "kglobalshortcuttrigger.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
 #include "sequencehelpers_p.h"
@@ -315,8 +316,7 @@ Component *GlobalShortcutsRegistry::getOrCreateComponent(const QString &uniqueNa
             return nullptr;
         }
         actionComp->activateGlobalShortcutContext(QStringLiteral("default"));
-        actionComp->loadSettings(_config.group(QStringLiteral("services")).group(uniqueName),
-                                 _state.group(QStringLiteral("services")).group(uniqueName));
+        actionComp->loadSettings(_config.group(QStringLiteral("services")).group(uniqueName), _state.group(QStringLiteral("services")).group(uniqueName));
         return actionComp;
     } else {
         return createComponent(uniqueName, friendlyName);
@@ -328,6 +328,15 @@ QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByKey(const QKeySeq
     QList<GlobalShortcut *> rc;
     for (const ComponentPtr &component : m_components) {
         rc += component->getShortcutsByKey(key, type);
+    }
+    return rc;
+}
+
+QList<GlobalShortcut *> GlobalShortcutsRegistry::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    QList<GlobalShortcut *> rc;
+    for (const ComponentPtr &component : m_components) {
+        rc += component->getShortcutsByTrigger(trigger);
     }
     return rc;
 }

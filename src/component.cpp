@@ -8,6 +8,7 @@
 
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
+#include "kglobalshortcuttrigger.h"
 #include "logging.h"
 #include "sequencehelpers_p.h"
 
@@ -225,6 +226,15 @@ QList<GlobalShortcut *> Component::getShortcutsByKey(const QKeySequence &key, KG
     QList<GlobalShortcut *> rc;
     for (GlobalShortcutContext *context : std::as_const(_contexts)) {
         rc += context->getShortcutsByKey(key, type);
+    }
+    return rc;
+}
+
+QList<GlobalShortcut *> Component::getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    QList<GlobalShortcut *> rc;
+    for (GlobalShortcutContext *context : std::as_const(_contexts)) {
+        rc += context->getShortcutsByTrigger(trigger);
     }
     return rc;
 }

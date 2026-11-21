@@ -11,15 +11,14 @@
 
 class GlobalShortcutContext;
 class GlobalShortcutsRegistry;
+class KGlobalShortcutTrigger;
 
 /**
  * Represents a global shortcut.
  *
  * @internal
  *
- * \note This class can handle multiple keys (default and active). This
- * feature isn't used currently. kde4 only allows setting one key per global
- * shortcut.
+ * \note This class can handle multiple keys and gesture triggers (default and active).
  *
  * @author Michael Jansen <kde@michael-jansen.biz>
  */
@@ -36,6 +35,13 @@ public:
 
     //! Returns the default keys for this shortcut.
     QSet<QKeySequence> defaultKeys() const;
+
+    //! Returns a list of trigger types in both the default and current trigger lists.
+    QStringList triggerTypes() const;
+
+    //! Returns the default triggers of \a triggerType for this shortcut.
+    //! \sa triggerTypes()
+    QSet<KGlobalShortcutTrigger> defaultTriggers(const QString &triggerType) const;
 
     //! Return the friendly display name for this shortcut.
     QString friendlyName() const;
@@ -58,11 +64,17 @@ public:
     //! Returns a list of keys associated with this shortcut.
     QSet<QKeySequence> keys() const;
 
+    //! Returns a list of triggers of \a triggerType associated with this shortcut.
+    QSet<KGlobalShortcutTrigger> triggers(const QString &triggerType) const;
+
     //! Activates the shortcut. The keys are grabbed.
     void setActive();
 
     //! Sets the default keys for this shortcut.
     void setDefaultKeys(const QSet<QKeySequence> &);
+
+    //! Sets the default triggers for this shortcut.
+    void setDefaultTriggers(const QString &triggerType, const QSet<KGlobalShortcutTrigger> &);
 
     //! Sets the friendly name for the shortcut. For display.
     void setFriendlyName(const QString &);
@@ -78,6 +90,18 @@ public:
 
     //! Sets the keys activated with this shortcut. The old keys are freed.
     void setKeys(const QSet<QKeySequence> &);
+
+    enum AssignmentType {
+        FromDefaults,
+        FromOverride,
+    };
+
+    //! Sets the triggers \a triggerType activated with this shortcut.
+    //! The old triggers of the same type are freed.
+    void setTriggers(const QString &triggerType, const QSet<KGlobalShortcutTrigger> &, AssignmentType);
+
+    //! Returns true if the default trigger assignments have been customized by the user.
+    bool hasOverrideTriggerAssignments(const QString &triggerType) const;
 
     //! Returns the unique name aka id for the shortcuts.
     QString uniqueName() const;
@@ -114,6 +138,13 @@ private:
     QSet<QKeySequence> _keys;
     QSet<QKeySequence> _defaultKeys;
     uint64_t _serial;
+
+    struct TriggerLists {
+        QSet<KGlobalShortcutTrigger> defaults;
+        QSet<KGlobalShortcutTrigger> assigned;
+        bool hasOverrideAssignments = false;
+    };
+    QHash<QString, TriggerLists> _triggersPerType;
 
     QString _inverseActionUniqueName;
 };

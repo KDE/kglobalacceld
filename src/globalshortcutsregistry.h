@@ -31,6 +31,7 @@
 
 class Component;
 class GlobalShortcut;
+class KGlobalShortcutTrigger;
 
 /**
  * Global Shortcut Registry.
@@ -93,13 +94,21 @@ public:
      */
     Component *getOrCreateComponent(const QString &uniqueName, const QString &friendlyName);
 
-    /**
-     * Get the shortcuts corresponding to key. Active and inactive shortcuts
+    /*!
+     * Get the shortcuts corresponding to \a keySequence. Active and inactive shortcuts
      * are considered.
      *
-     * @see getShortcutsByKey(int key)
+     * \sa getShortcutsByTrigger(const KGlobalShortcutTrigger &)
      */
     QList<GlobalShortcut *> getShortcutsByKey(const QKeySequence &keySequence, KGlobalAccel::MatchType type = KGlobalAccel::MatchType::Equal) const;
+
+    /*!
+     * Get the shortcuts corresponding to \a trigger. Active and inactive shortcuts
+     * are considered.
+     *
+     * \sa getShortcutsByKey(const QKeySequence &, KGlobalAccel::MatchType)
+     */
+    QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     /**
      * Returns an active shortcut for the specified @a keySequence. If there is no active global shortcut
