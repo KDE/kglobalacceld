@@ -130,6 +130,14 @@ protected:
                                      uint64_t serial = 0);
 
     /**
+     * Construct and assign a list of triggers to the given \a shortcut.
+     *
+     * Calls shortcut->setTriggers() and optionally shortcut->setDefaultTriggers() with the
+     * given \a triggerType and the list of triggers constructed from \a triggerParamStrings.
+     */
+    void loadTriggers(GlobalShortcut *shortcut, const QString &triggerType, const QStringList &triggerParamStrings, bool isDefault);
+
+    /**
      * Assign two already registered actions to each other as inverse actions.
      * @param aUniqueName internal unique name of a given action
      * @param configEntry internal unique name of its inverse action, plus optional extra flags
