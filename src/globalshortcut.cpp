@@ -259,6 +259,14 @@ void GlobalShortcut::setActive()
         }
     }
 
+    for (const auto &triggerLists : std::as_const(_triggersPerType)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!_registry->registerTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to register " << trigger.type() << trigger.paramString();
+            }
+        }
+    }
+
     _isRegistered = true;
 }
 
@@ -272,6 +280,14 @@ void GlobalShortcut::setInactive()
     for (const QKeySequence &key : std::as_const(_keys)) {
         if (!key.isEmpty() && !_registry->unregisterKey(key, this)) {
             qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << QKeySequence(key).toString();
+        }
+    }
+
+    for (const auto &triggerLists : std::as_const(_triggersPerType)) {
+        for (const KGlobalShortcutTrigger &trigger : triggerLists.assigned) {
+            if (!_registry->unregisterTrigger(trigger, this)) {
+                qCDebug(KGLOBALACCELD) << uniqueName() << ": Failed to unregister " << trigger.type() << trigger.paramString();
+            }
         }
     }
 

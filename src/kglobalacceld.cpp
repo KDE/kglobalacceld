@@ -14,6 +14,7 @@
 #include "globalshortcutcontext.h"
 #include "globalshortcutsregistry.h"
 #include "kglobalaccel.h"
+#include "kglobalshortcuttrigger.h"
 #include "kserviceactioncomponent.h"
 #include "logging.h"
 #include "sequencehelpers_p.h"
@@ -162,6 +163,7 @@ KGlobalAccelD::KGlobalAccelD()
     , d(new KGlobalAccelDPrivate(this))
 {
     d->m_registry = std::make_unique<GlobalShortcutsRegistry>();
+    connect(d->m_registry.get(), &GlobalShortcutsRegistry::triggerActive, this, &KGlobalAccelD::triggerActive);
 }
 
 bool KGlobalAccelD::init()

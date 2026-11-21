@@ -22,6 +22,7 @@
 
 #include <functional>
 
+class KGlobalShortcutTrigger;
 struct KGlobalAccelDPrivate;
 
 /**
@@ -210,6 +211,30 @@ Q_SIGNALS:
 #endif
 
     Q_SCRIPTABLE void yourShortcutsChanged(const QStringList &actionId, const QSet<QKeySequence> &newKeys);
+
+    /**
+     * This function tells the owner (e.g. KWin) that a certain trigger/action pair is now active
+     * or inactive, depending on the \b active boolean.
+     *
+     * The owner should monitor active triggers and call triggerEvent() to notify KGlobalAccel
+     * about their status. Alternatively, the owner can choose to implement a custom behavior
+     * (e.g. live gesture updates) depending on the component/action arguments.
+     *
+     * Before destruction, every previously activated trigger will be signalled as inactive.
+     *
+     * \param trigger the trigger to activate or deactivate
+     * \param active true if the trigger will invoke the stated action, false if it gets deactivated again
+     * \param componentName unique name of the action's registered component
+     * \param actionId unique name of the action within its component
+     * \param componentFriendlyName user-visible name of the action's registered component
+     * \param actionFriendlyName user-visible name of the action within its component
+     */
+    void triggerActive(const KGlobalShortcutTrigger &trigger,
+                       bool active,
+                       const QString &componentName,
+                       const QString &actionId,
+                       const QString &componentFriendlyName,
+                       const QString &actionFriendlyName);
 
 private:
     KGlobalAccelDPrivate *const d;

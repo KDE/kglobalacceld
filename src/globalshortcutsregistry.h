@@ -110,11 +110,17 @@ public:
      */
     QList<GlobalShortcut *> getShortcutsByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
-    /**
-     * Returns an active shortcut for the specified @a keySequence. If there is no active global shortcut
-     * with the given key combination, @c null will be returned.
+    /*!
+     * Returns an active shortcut for the specified \a keySequence. If there is no active global shortcut
+     * with the given key combination, \c null will be returned.
      */
     GlobalShortcut *activeShortcutByKey(const QKeySequence &keySequence) const;
+
+    /*!
+     * Returns an active shortcut for the specified \a trigger. If there is no active global shortcut
+     * with the given key combination, \c null will be returned.
+     */
+    GlobalShortcut *activeShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const;
 
     /**
      * Checks if @p shortcut is available for @p component.
@@ -126,7 +132,11 @@ public:
 
     bool registerKey(const QKeySequence &key, GlobalShortcut *shortcut);
 
+    bool registerTrigger(const KGlobalShortcutTrigger &key, GlobalShortcut *shortcut);
+
     bool unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut);
+
+    bool unregisterTrigger(const KGlobalShortcutTrigger &key, GlobalShortcut *shortcut);
 
     /**
      * Generates the next available global shortcut serial. Global shortcut serials increase
@@ -145,6 +155,13 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void needsSave();
+
+    void triggerActive(const KGlobalShortcutTrigger &trigger,
+                       bool active,
+                       const QString &componentName,
+                       const QString &actionId,
+                       const QString &componentFriendlyName,
+                       const QString &actionFriendlyName);
 
 private:
     friend struct KGlobalAccelDPrivate;
@@ -175,6 +192,8 @@ private:
 
     QMultiHash<QKeySequence, GlobalShortcut *> _active_keys;
     QKeySequence _active_sequence;
+
+    QMultiHash<QString, GlobalShortcut *> _active_triggers; // key is trigger.toString()
 
     Qt::KeyboardModifiers m_currentModifiers;
     // State machine:

@@ -241,6 +241,7 @@ GlobalShortcutsRegistry::GlobalShortcutsRegistry()
 GlobalShortcutsRegistry::~GlobalShortcutsRegistry()
 {
     m_components.clear();
+    _active_triggers.clear();
     _active_keys.clear();
 }
 
@@ -289,6 +290,7 @@ void GlobalShortcutsRegistry::clear()
 
     // The shortcuts should have deregistered themselves
     Q_ASSERT(_active_keys.isEmpty());
+    Q_ASSERT(_active_triggers.isEmpty());
 }
 
 void GlobalShortcutsRegistry::deactivateShortcuts(bool temporarily)
@@ -362,6 +364,24 @@ GlobalShortcut *GlobalShortcutsRegistry::activeShortcutByKey(const QKeySequence 
     });
 
     return shortcuts[0];
+}
+
+GlobalShortcut *GlobalShortcutsRegistry::activeShortcutByTrigger(const KGlobalShortcutTrigger &trigger) const
+{
+    auto [it, end] = _active_triggers.equal_range(trigger.toString());
+
+    if (it == end) {
+        return nullptr;
+    }
+
+    GlobalShortcut *candidate = it.value();
+
+    for (++it; it != end; ++it) {
+        if (it.value()->serial() < candidate->serial()) {
+            candidate = it.value();
+        }
+    }
+    return candidate;
 }
 
 bool GlobalShortcutsRegistry::isShortcutKeyAvailable(const QKeySequence &shortcut, const QString &componentName, const QString &contextName) const
@@ -844,6 +864,49 @@ bool GlobalShortcutsRegistry::registerKey(const QKeySequence &key, GlobalShortcu
     return true;
 }
 
+bool GlobalShortcutsRegistry::registerTrigger(const KGlobalShortcutTrigger &trigger, GlobalShortcut *shortcut)
+{
+    if (trigger.isEmpty()) {
+        qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Attempt to register empty trigger.";
+        return false;
+    } else if (_active_triggers.contains(trigger.toString(), shortcut)) {
+        return true;
+    }
+
+    GlobalShortcut *previousShortcut = activeShortcutByTrigger(trigger);
+    _active_triggers.insert(trigger.toString(), shortcut);
+    GlobalShortcut *activeShortcut = activeShortcutByTrigger(trigger);
+
+    if (previousShortcut == activeShortcut) {
+        qCDebug(KGLOBALACCELD) << shortcut->uniqueName() << ": Trigger" << trigger.toString() << "already taken by" << previousShortcut->uniqueName();
+        return false;
+    }
+    Q_ASSERT(shortcut == activeShortcut);
+
+    if (previousShortcut) {
+        // Only one trigger of the same kind is exposed as active at the same time,
+        // even if we store several registered triggers in _active_triggers.
+        qCDebug(KGLOBALACCELD) << "Deactivating trigger" << trigger.toString() << "for" << previousShortcut->context()->component()->uniqueName() << ":"
+                               << previousShortcut->uniqueName();
+        Q_EMIT triggerActive(trigger,
+                             false,
+                             previousShortcut->context()->component()->uniqueName(),
+                             previousShortcut->uniqueName(),
+                             previousShortcut->context()->component()->friendlyName(),
+                             previousShortcut->friendlyName());
+    }
+
+    qCDebug(KGLOBALACCELD) << "Registering trigger" << trigger.toString() << "for" << shortcut->context()->component()->uniqueName() << ":"
+                           << shortcut->uniqueName();
+    Q_EMIT triggerActive(trigger,
+                         true,
+                         shortcut->context()->component()->uniqueName(),
+                         shortcut->uniqueName(),
+                         shortcut->context()->component()->friendlyName(),
+                         shortcut->friendlyName());
+    return true;
+}
+
 bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShortcut *shortcut)
 {
     if (!_active_keys.contains(key, shortcut)) {
@@ -854,6 +917,46 @@ bool GlobalShortcutsRegistry::unregisterKey(const QKeySequence &key, GlobalShort
     releaseHeldShortcut(shortcut);
 
     _active_keys.remove(key, shortcut);
+    return true;
+}
+
+bool GlobalShortcutsRegistry::unregisterTrigger(const KGlobalShortcutTrigger &trigger, GlobalShortcut *shortcut)
+{
+    if (_active_triggers.value(trigger.toString()) != shortcut) {
+        // The shortcut doesn't own the trigger or the trigger isn't grabbed
+        return false;
+    }
+
+    GlobalShortcut *activeShortcut = activeShortcutByTrigger(trigger);
+    _active_triggers.remove(trigger.toString(), shortcut);
+
+    if (shortcut != activeShortcut) { // nothing else to do
+        return true;
+    }
+
+    qCDebug(KGLOBALACCELD) << "Unregistering trigger" << trigger.toString() << "for" << shortcut->context()->component()->uniqueName() << ":"
+                           << shortcut->uniqueName();
+    Q_EMIT triggerActive(trigger,
+                         false,
+                         shortcut->context()->component()->uniqueName(),
+                         shortcut->uniqueName(),
+                         shortcut->context()->component()->friendlyName(),
+                         shortcut->friendlyName());
+
+    releaseHeldShortcut(shortcut);
+
+    if ((activeShortcut = activeShortcutByTrigger(trigger))) {
+        // Another registered shortcut is now active instead for this trigger, announce it.
+        qCDebug(KGLOBALACCELD) << "Reactivating trigger" << trigger.toString() << "for" << activeShortcut->context()->component()->uniqueName() << ":"
+                               << activeShortcut->uniqueName();
+        Q_EMIT triggerActive(trigger,
+                             true,
+                             activeShortcut->context()->component()->uniqueName(),
+                             activeShortcut->uniqueName(),
+                             activeShortcut->context()->component()->friendlyName(),
+                             activeShortcut->friendlyName());
+    }
+
     return true;
 }
 

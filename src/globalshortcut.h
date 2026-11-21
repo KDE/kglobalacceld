@@ -67,7 +67,7 @@ public:
     //! Returns a list of triggers of \a triggerType associated with this shortcut.
     QSet<KGlobalShortcutTrigger> triggers(const QString &triggerType) const;
 
-    //! Activates the shortcut. The keys are grabbed.
+    //! Activates the shortcut. Its keys are grabbed, triggers are activated.
     void setActive();
 
     //! Sets the default keys for this shortcut.
@@ -82,7 +82,7 @@ public:
     //! Sets the inverse action for this shortcut.
     void setInverseActionUniqueName(const QString &uniqueName);
 
-    //! Sets the shortcut inactive. No longer grabs the keys.
+    //! Sets the shortcut inactive. No longer grabs its keys or triggers.
     void setInactive();
 
     void setIsPresent(bool);
