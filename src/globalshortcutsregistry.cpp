@@ -417,6 +417,11 @@ void GlobalShortcutsRegistry::releaseHeldShortcut(GlobalShortcut *shortcut)
     }
 }
 
+bool GlobalShortcutsRegistry::isShortcutHeld(const GlobalShortcut *shortcut) const
+{
+    return std::find(m_heldShortcuts.cbegin(), m_heldShortcuts.cend(), shortcut) != m_heldShortcuts.cend();
+}
+
 static void correctKeyEvent(int &keyQt)
 {
     int keyMod = keyQt & Qt::KeyboardModifierMask;
@@ -615,6 +620,39 @@ bool GlobalShortcutsRegistry::axisTriggered(int axis)
     Q_UNUSED(axis)
     m_state = Normal;
     return false;
+}
+
+bool GlobalShortcutsRegistry::triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event)
+{
+    m_state = Normal;
+
+    GlobalShortcut *shortcut = activeShortcutByTrigger(trigger);
+
+    qCDebug(KGLOBALACCELD) << "Processed trigger" << trigger.type() << trigger.paramString() << "="
+                           << (shortcut ? shortcut->uniqueName() : "(no shortcut found)"_L1);
+    if (!shortcut) {
+        return false;
+    }
+    if (event == ShortcutTriggerEvent::Cancelled) {
+        return true;
+    }
+    if (!isShortcutAllowed(shortcut)) {
+        return false;
+    }
+
+    // Invoke the action
+    if (event == ShortcutTriggerEvent::Triggered) {
+        if (isShortcutHeld(shortcut)) {
+            // We could issue ShortcutKeyState::Repeated here, but let's not do that without a use case.
+            qCDebug(KGLOBALACCELD) << "Ignoring ShortcutTriggerEvent::Triggered for" << trigger.toString() << "because shortcut" << shortcut->uniqueName()
+                                   << "is already held";
+            return true;
+        }
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Pressed);
+        shortcut->context()->component()->emitGlobalShortcutEvent(*shortcut, ShortcutKeyState::Released);
+    }
+
+    return true;
 }
 
 Component *GlobalShortcutsRegistry::createComponent(const QString &uniqueName, const QString &friendlyName)

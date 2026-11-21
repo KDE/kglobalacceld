@@ -253,6 +253,11 @@ void KGlobalAccelD::resetModifierOnlyState()
     return d->m_registry->resetModifierOnlyState();
 }
 
+bool KGlobalAccelD::triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event)
+{
+    return d->m_registry->triggerEvent(trigger, event);
+}
+
 KGlobalAccelD::~KGlobalAccelD()
 {
     if (d->writeoutTimer.isActive()) {

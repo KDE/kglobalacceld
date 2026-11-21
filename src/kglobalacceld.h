@@ -71,6 +71,20 @@ public:
     void resetModifierOnlyState();
 
     /*!
+     * Inform KGlobalAccelD about the status of an active trigger.
+     *
+     * `ShortcutTriggerEvent::Triggered` will invoke the assigned action, in the same way that an
+     * analogous keyboard shortcut would invoke it. Sending `ShortcutTriggerEvent::Started`
+     * prior to a `Triggered` or `Cancelled` event is optional.
+     *
+     * Events for inactive triggers will be ignored.
+     *
+     * \sa triggerActive
+     * \since 6.9
+     */
+    bool triggerEvent(const KGlobalShortcutTrigger &trigger, ShortcutTriggerEvent event);
+
+    /*!
      * To be called by KGlobalAccelD owner (e.g. KWin) to set defaults for its own and external gestures.
      * \since 6.9
      */

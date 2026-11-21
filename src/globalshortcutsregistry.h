@@ -187,6 +187,7 @@ private:
     bool keyEvent(int keyQt, ShortcutKeyState state);
     bool pointerPressed(Qt::MouseButtons pointerButtons);
     bool axisTriggered(int axis);
+    bool triggerEvent(const KGlobalShortcutTrigger &, ShortcutTriggerEvent event);
 
     bool processKey(int keyQt, ShortcutKeyState state);
 
@@ -276,6 +277,8 @@ private:
      * Emit a release event for @a shortcut if it is currently held.
      */
     void releaseHeldShortcut(GlobalShortcut *shortcut);
+
+    bool isShortcutHeld(const GlobalShortcut *shortcut) const;
 
     // Pressed keys that triggered a shortcut, mapped to the shortcuts they hold
     QMultiHash<int, GlobalShortcut *> m_heldShortcuts;
