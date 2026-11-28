@@ -8,7 +8,9 @@
 
 #include "component.h"
 #include "kglobalacceld.h"
+#include "kglobalshortcuttrigger.h"
 
+#include <QCoreApplication>
 #include <QFile>
 #include <QPluginLoader>
 #include <QSignalSpy>
@@ -40,11 +42,18 @@ private Q_SLOTS:
     void testHeldShortcutUnregistered();
     void testLostRelease();
     void testLostReleaseWithoutModifier();
+    void testTriggerWithoutHeldShortcut();
+    void testTriggerDuringHeldShortcut();
+    void testTriggerWhileOtherShortcutHeld();
+    void testTriggerCancelled();
 
 private:
     void sendKeyCombination(QKeyCombination keyCombination, ShortcutKeyState state);
     void sendKeyCombinationPressAndRelease(QKeyCombination keyCombination);
     static QList<bool> activeStates(const QSignalSpy &spy, QAction *action);
+
+    void setDefaultTrigger(const QAction *action, const KGlobalShortcutTrigger &trigger);
+    static KGlobalShortcutTrigger exampleTrigger();
 
     std::unique_ptr<KGlobalAccelD> m_globalacceld;
     KGlobalAccel *m_globalaccel;
@@ -116,6 +125,19 @@ QList<bool> ShortcutsTest::activeStates(const QSignalSpy &spy, QAction *action)
         }
     }
     return states;
+}
+
+void ShortcutsTest::setDefaultTrigger(const QAction *action, const KGlobalShortcutTrigger &trigger)
+{
+    m_globalacceld->setDefaultShortcutTriggers(QCoreApplication::applicationName(), action->objectName(), {trigger});
+}
+
+KGlobalShortcutTrigger ShortcutsTest::exampleTrigger()
+{
+    return KGlobalShortcutTrigger(KGlobalShortcutTriggerTypes::TouchpadSwipeGesture{
+        .fingerCount = 3,
+        .direction = KGlobalShortcutTriggerTypes::SwipeDirection::Left,
+    });
 }
 
 void ShortcutsTest::initTestCase()
@@ -634,6 +656,125 @@ void ShortcutsTest::testLostReleaseWithoutModifier()
     m_globalacceld->keyEvent(Qt::Key_F13, ShortcutKeyState::Released);
     QVERIFY(!activeSpy.wait(100));
     QCOMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testTriggerWithoutHeldShortcut()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("TriggerWithoutHeldShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::Key_F13)));
+
+    const KGlobalShortcutTrigger trigger = exampleTrigger();
+    setDefaultTrigger(action.get(), trigger);
+
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    // Started does not invoke the action by itself.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Started));
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), QList<bool>{});
+
+    // Triggered invokes the action as an atomic press/release pair.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Triggered));
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    // A second Triggered invokes it again; triggers are not held.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Triggered));
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testTriggerDuringHeldShortcut()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("TriggerDuringHeldShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::Key_F13)));
+
+    const KGlobalShortcutTrigger trigger = exampleTrigger();
+    setDefaultTrigger(action.get(), trigger);
+
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    // Triggering while the shortcut is not held invokes it once.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Triggered));
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
+
+    // Holding the key and triggering the same shortcut must not emit another
+    // press/release pair; the action is already active.
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true}));
+
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Triggered));
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true}));
+
+    // Releasing the key ends the held shortcut exactly once.
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false, true, false}));
+
+    m_globalaccel->removeAllShortcuts(action.get());
+}
+
+void ShortcutsTest::testTriggerWhileOtherShortcutHeld()
+{
+    auto held = std::make_unique<QAction>();
+    held->setObjectName(QStringLiteral("HeldShortcutForTriggerTest"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(held.get(), QKeySequence(Qt::Key_F13)));
+
+    auto triggered = std::make_unique<QAction>();
+    triggered->setObjectName(QStringLiteral("TriggeredShortcutWhileOtherHeld"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(triggered.get(), QKeySequence(Qt::Key_F14)));
+
+    const KGlobalShortcutTrigger trigger = exampleTrigger();
+    setDefaultTrigger(triggered.get(), trigger);
+
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, held.get()), QList<bool>{true});
+
+    // A trigger for another shortcut is not suppressed by an unrelated held shortcut.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Triggered));
+    QTRY_COMPARE(activeStates(activeSpy, triggered.get()), (QList<bool>{true, false}));
+    QCOMPARE(activeStates(activeSpy, held.get()), QList<bool>{true});
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, held.get()), (QList<bool>{true, false}));
+
+    m_globalaccel->removeAllShortcuts(held.get());
+    m_globalaccel->removeAllShortcuts(triggered.get());
+}
+
+void ShortcutsTest::testTriggerCancelled()
+{
+    auto action = std::make_unique<QAction>();
+    action->setObjectName(QStringLiteral("TriggerCancelledShortcut"));
+    QVERIFY(KGlobalAccel::setGlobalShortcut(action.get(), QKeySequence(Qt::Key_F13)));
+
+    const KGlobalShortcutTrigger trigger = exampleTrigger();
+    setDefaultTrigger(action.get(), trigger);
+
+    QSignalSpy activeSpy(m_globalaccel, &KGlobalAccel::globalShortcutActiveChanged);
+
+    // Cancelling a gesture that never started does nothing.
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Cancelled));
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), QList<bool>{});
+
+    // Cancelling a gesture must not release a shortcut held by a key.
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Pressed);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Started));
+    QVERIFY(m_globalacceld->triggerEvent(trigger, ShortcutTriggerEvent::Cancelled));
+    QVERIFY(!activeSpy.wait(100));
+    QCOMPARE(activeStates(activeSpy, action.get()), QList<bool>{true});
+
+    sendKeyCombination(Qt::Key_F13, ShortcutKeyState::Released);
+    QTRY_COMPARE(activeStates(activeSpy, action.get()), (QList<bool>{true, false}));
 
     m_globalaccel->removeAllShortcuts(action.get());
 }
