@@ -125,6 +125,9 @@ void ShortcutsTest::initTestCase()
     if (const QString filePath = QStandardPaths::locate(QStandardPaths::ConfigLocation, QStringLiteral("kglobalshortcutsrc")); !filePath.isEmpty()) {
         QFile::remove(filePath);
     }
+    if (const QString filePath = QStandardPaths::locate(QStandardPaths::ConfigLocation, QStringLiteral("kglobalaccelrc")); !filePath.isEmpty()) {
+        QFile::remove(filePath);
+    }
 
     m_globalacceld = std::make_unique<KGlobalAccelD>();
     QVERIFY(m_globalacceld->init());
