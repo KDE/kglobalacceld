@@ -38,7 +38,6 @@ private Q_SLOTS:
     void testMigrate()
     {
         QStandardPaths::setTestModeEnabled(true);
-        qunsetenv("XDG_DATA_DIRS");
 
         QDir configDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation));
         configDir.mkpath(QStringLiteral("."));
@@ -46,6 +45,10 @@ private Q_SLOTS:
 
         QDir dataDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
         dataDir.mkpath(QStringLiteral("kglobalaccel"));
+
+        // Avoid picking up system fallback folders with .desktop files containing X-KDE-Migrate-Shortcut keys:
+        // unsetting the env var is not sufficient, set it explicitly
+        qputenv("XDG_DATA_DIRS", dataDir.absolutePath().toUtf8());
 
         QFile::copy(QFINDTESTDATA("kglobalshortcutsrc"),
                     QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QLatin1String("/kglobalshortcutsrc"));
