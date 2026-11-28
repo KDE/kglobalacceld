@@ -68,6 +68,6 @@ private Q_SLOTS:
     }
 };
 
-QTEST_MAIN(MigrateConfigTest)
+QTEST_GUILESS_MAIN(MigrateConfigTest)
 
 #include "migrateconfigtest.moc"
